@@ -1,0 +1,435 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useUser } from "@clerk/nextjs";
+import { useRouter } from "next/navigation";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Users, Calendar, Activity, ArrowLeft, Bell, ChevronUp, ChevronDown, AlertTriangle } from "lucide-react";
+import Link from "next/link";
+import { supabase } from "@/lib/supabase/client";
+
+interface QueuePatient {
+  id: string;
+  token_number: number;
+  patient_name: string;
+  position: number;
+  status: string;
+  is_emergency: boolean;
+  created_at: string;
+  estimated_wait_time: number;
+}
+
+interface Appointment {
+  id: string;
+  patient_name: string;
+  date: string;
+  time: string;
+  status: string;
+  notes?: string;
+}
+
+export default function DoctorDashboardPage() {
+  const { user, isLoaded, isSignedIn } = useUser();
+  const router = useRouter();
+  const [queue, setQueue] = useState<QueuePatient[]>([]);
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [stats, setStats] = useState({
+    patientsServed: 12,
+    waitingPatients: 0,
+    todayAppointments: 0,
+    avgWaitTime: 15
+  });
+  const [loading, setLoading] = useState(true);
+  const [doctorInfo, setDoctorInfo] = useState<any>(null);
+
+  useEffect(() => {
+    if (isLoaded && !isSignedIn) {
+      router.push("/sign-in");
+    }
+  }, [isLoaded, isSignedIn, user, router]);
+
+  useEffect(() => {
+    if (isLoaded && isSignedIn && user) {
+      fetchDoctorData();
+    }
+  }, [isLoaded, isSignedIn, user]);
+
+  const fetchDoctorData = async () => {
+    try {
+      // Fetch doctor info (using email to match)
+      const { data: doctor } = await supabase
+        .from('doctors')
+        .select('*')
+        .eq('email', user?.primaryEmailAddress?.emailAddress)
+        .single();
+
+      setDoctorInfo(doctor);
+
+      if (doctor) {
+        // Fetch queue for this doctor
+        const { data: queueData } = await supabase
+          .from('queue')
+          .select('*')
+          .eq('doctor_id', doctor.id)
+          .eq('status', 'waiting')
+          .order('is_emergency', { ascending: false })
+          .order('position', { ascending: true });
+
+        setQueue(queueData || []);
+
+        // Fetch today's appointments
+        const today = new Date().toISOString().split('T')[0];
+        const { data: appointmentsData } = await supabase
+          .from('appointments')
+          .select('*')
+          .eq('doctor_id', doctor.id)
+          .gte('date', today)
+          .order('date', { ascending: true })
+          .order('time', { ascending: true });
+
+        setAppointments(appointmentsData || []);
+
+        setStats({
+          patientsServed: 12,
+          waitingPatients: queueData?.length || 0,
+          todayAppointments: appointmentsData?.filter(a => a.date === today).length || 0,
+          avgWaitTime: 15
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching doctor data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const callNextPatient = async () => {
+    if (queue.length === 0) return;
+
+    const nextPatient = queue[0];
+    
+    try {
+      await supabase
+        .from('queue')
+        .update({ status: 'in-treatment' })
+        .eq('id', nextPatient.id);
+
+      // Send notification to patient
+      await supabase
+        .from('notifications')
+        .insert({
+          type: 'queue',
+          title: 'Your Turn!',
+          message: `Please proceed to the counter. Token: ${nextPatient.token_number}`,
+          read: false,
+          created_at: new Date().toISOString()
+        });
+
+      fetchDoctorData();
+    } catch (error) {
+      console.error('Error calling next patient:', error);
+    }
+  };
+
+  const movePatientUp = async (patientId: string, currentPosition: number) => {
+    if (currentPosition <= 1) return;
+
+    try {
+      // Swap positions
+      const patientAbove = queue.find(p => p.position === currentPosition - 1);
+      if (patientAbove) {
+        await supabase
+          .from('queue')
+          .update({ position: currentPosition })
+          .eq('id', patientAbove.id);
+
+        await supabase
+          .from('queue')
+          .update({ position: currentPosition - 1 })
+          .eq('id', patientId);
+
+        fetchDoctorData();
+      }
+    } catch (error) {
+      console.error('Error moving patient:', error);
+    }
+  };
+
+  const movePatientDown = async (patientId: string, currentPosition: number) => {
+    if (currentPosition >= queue.length) return;
+
+    try {
+      const patientBelow = queue.find(p => p.position === currentPosition + 1);
+      if (patientBelow) {
+        await supabase
+          .from('queue')
+          .update({ position: currentPosition })
+          .eq('id', patientBelow.id);
+
+        await supabase
+          .from('queue')
+          .update({ position: currentPosition + 1 })
+          .eq('id', patientId);
+
+        fetchDoctorData();
+      }
+    } catch (error) {
+      console.error('Error moving patient:', error);
+    }
+  };
+
+  if (!isLoaded || !isSignedIn) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100">
+      <header className="bg-white/80 backdrop-blur-md shadow-sm sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <Link href="/" className="flex items-center space-x-2">
+              <ArrowLeft className="h-5 w-5 text-gray-600" />
+              <span className="text-gray-600">Back to Home</span>
+            </Link>
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-700 to-blue-900 bg-clip-text text-transparent">
+              Doctor Dashboard
+            </h1>
+            <div className="flex items-center space-x-4">
+              <Bell className="h-5 w-5 text-gray-600 cursor-pointer" />
+              <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white font-semibold">
+                {user?.firstName?.charAt(0) || 'D'}
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="mb-8">
+          <h2 className="text-3xl font-bold text-gray-900 mb-2">
+            Welcome, Dr. {doctorInfo?.name || user?.firstName || 'Doctor'}
+          </h2>
+          <p className="text-gray-600">{doctorInfo?.specialization || 'Medical Professional'}</p>
+        </div>
+
+        {/* Stats Cards */}
+        <div className="grid md:grid-cols-4 gap-6 mb-8">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Patients Served</CardTitle>
+              <Users className="h-4 w-4 text-green-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.patientsServed}</div>
+              <p className="text-xs text-gray-500 mt-1">Today</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Waiting Patients</CardTitle>
+              <Activity className="h-4 w-4 text-blue-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.waitingPatients}</div>
+              <p className="text-xs text-gray-500 mt-1">In queue</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Today's Appointments</CardTitle>
+              <Calendar className="h-4 w-4 text-purple-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.todayAppointments}</div>
+              <p className="text-xs text-gray-500 mt-1">Scheduled</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Avg Wait Time</CardTitle>
+              <Activity className="h-4 w-4 text-orange-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.avgWaitTime} min</div>
+              <p className="text-xs text-gray-500 mt-1">Current</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-6">
+          {/* Queue Management */}
+          <Card className="md:col-span-1">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Patient Queue</CardTitle>
+                  <CardDescription>Manage and prioritize your queue</CardDescription>
+                </div>
+                <Button 
+                  onClick={callNextPatient}
+                  disabled={queue.length === 0}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  Call Next Patient
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {loading ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 mx-auto border-b-2 border-blue-600"></div>
+                </div>
+              ) : queue.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <Activity className="h-12 w-12 mx-auto mb-3 text-gray-400" />
+                  <p>No patients in queue</p>
+                </div>
+              ) : (
+                <div className="space-y-3 max-h-[600px] overflow-y-auto">
+                  {queue.map((patient, index) => (
+                    <div 
+                      key={patient.id} 
+                      className={`flex items-center justify-between p-4 rounded-lg border-2 transition-all ${
+                        patient.is_emergency 
+                          ? 'bg-red-50 border-red-200' 
+                          : index === 0 
+                          ? 'bg-blue-50 border-blue-200' 
+                          : 'bg-gray-50 border-gray-200'
+                      }`}
+                    >
+                      <div className="flex items-center space-x-4 flex-1">
+                        <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold ${
+                          patient.is_emergency ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600'
+                        }`}>
+                          {patient.position}
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-2">
+                            <p className="font-semibold text-gray-900">{patient.patient_name}</p>
+                            {patient.is_emergency && (
+                              <span className="inline-flex items-center px-2 py-1 text-xs font-medium bg-red-100 text-red-800 rounded-full">
+                                <AlertTriangle className="h-3 w-3 mr-1" />
+                                EMERGENCY
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-sm text-gray-500">Token: {patient.token_number}</p>
+                          <p className="text-xs text-gray-400">Wait: ~{patient.estimated_wait_time} min</p>
+                        </div>
+                      </div>
+                      <div className="flex flex-col space-y-1">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => movePatientUp(patient.id, patient.position)}
+                          disabled={patient.position <= 1 || patient.is_emergency}
+                          className="h-8 w-8 p-0"
+                        >
+                          <ChevronUp className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => movePatientDown(patient.id, patient.position)}
+                          disabled={patient.position >= queue.length}
+                          className="h-8 w-8 p-0"
+                        >
+                          <ChevronDown className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Appointments Schedule */}
+          <Card className="md:col-span-1">
+            <CardHeader>
+              <CardTitle>Appointment Schedule</CardTitle>
+              <CardDescription>Your upcoming appointments with time slots</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {loading ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 mx-auto border-b-2 border-blue-600"></div>
+                </div>
+              ) : appointments.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <Calendar className="h-12 w-12 mx-auto mb-3 text-gray-400" />
+                  <p>No upcoming appointments</p>
+                </div>
+              ) : (
+                <div className="space-y-3 max-h-[600px] overflow-y-auto">
+                  {appointments.map((appointment) => {
+                    const appointmentDate = new Date(appointment.date);
+                    const isToday = appointmentDate.toISOString().split('T')[0] === new Date().toISOString().split('T')[0];
+                    const isPast = new Date(`${appointment.date} ${appointment.time}`) < new Date();
+                    
+                    return (
+                      <div 
+                        key={appointment.id}
+                        className={`p-4 rounded-lg border-2 ${
+                          isToday && !isPast
+                            ? 'bg-blue-50 border-blue-200'
+                            : isPast
+                            ? 'bg-gray-50 border-gray-200 opacity-60'
+                            : 'bg-white border-gray-200'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <div>
+                            <p className="font-semibold text-gray-900">{appointment.patient_name}</p>
+                            <p className="text-sm text-gray-600">
+                              {appointmentDate.toLocaleDateString('en-US', { 
+                                weekday: 'short', 
+                                month: 'short', 
+                                day: 'numeric' 
+                              })}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-lg font-bold text-blue-600">{appointment.time}</p>
+                            <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
+                              appointment.status === 'confirmed' 
+                                ? 'bg-green-100 text-green-800'
+                                : appointment.status === 'pending'
+                                ? 'bg-yellow-100 text-yellow-800'
+                                : 'bg-gray-100 text-gray-800'
+                            }`}>
+                              {appointment.status}
+                            </span>
+                          </div>
+                        </div>
+                        {appointment.notes && (
+                          <p className="text-xs text-gray-500 mt-2 p-2 bg-gray-100 rounded">
+                            {appointment.notes}
+                          </p>
+                        )}
+                        {isToday && !isPast && (
+                          <div className="mt-3 flex items-center text-xs text-blue-600">
+                            <div className="w-2 h-2 bg-blue-600 rounded-full mr-2 animate-pulse"></div>
+                            Time slot locked - Patient will be notified
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </main>
+    </div>
+  );
+}
