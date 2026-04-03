@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MediQueue — Doctor Dashboard</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      fontFamily: { sans: ['Inter','sans-serif'] },
+      colors: {
+        border: '#b2ebf2', input: '#b2ebf2', ring: '#00bcd4',
+        background: '#f0fdfe', foreground: '#0d2b2e',
+        primary: { DEFAULT: '#00bcd4', foreground: '#ffffff' },
+        secondary: { DEFAULT: '#e0f7fa', foreground: '#006064' },
+        muted: { DEFAULT: '#e0f7fa', foreground: '#4a9a9e' },
+        card: { DEFAULT: '#ffffff', foreground: '#0d2b2e' },
+        'teal-50':'#e0f7fa','teal-100':'#b2ebf2','teal-200':'#80deea',
+        'teal-300':'#4dd0e1','teal-400':'#26c6da','teal-500':'#00bcd4',
+        'teal-600':'#00acc1','teal-700':'#0097a7','teal-800':'#00838f',
+        'teal-900':'#006064','teal-950':'#004d40',
+      },
+      borderRadius: { lg:'8px', md:'6px', sm:'4px' },
+    }
+  }
+}
+</script>
+<style>
+  * { box-sizing:border-box; }
+  body { font-family:'Inter',sans-serif; -webkit-font-smoothing:antialiased; }
+  .shadcn-card { background:#fff; border:1px solid #b2ebf2; border-radius:8px; box-shadow:0 1px 3px rgba(0,150,170,.08); }
+  .shadcn-badge { display:inline-flex; align-items:center; border-radius:9999px; border:1px solid transparent; padding:2px 9px; font-size:11.5px; font-weight:500; }
+  .badge-teal { background:#e0f7fa; color:#006064; border-color:#b2ebf2; }
+  .badge-success { background:#f0fdf4; color:#16a34a; border-color:#bbf7d0; }
+  .badge-warning { background:#fffbeb; color:#d97706; border-color:#fde68a; }
+  .badge-danger { background:#fef2f2; color:#dc2626; border-color:#fecaca; }
+  .badge-outline { background:transparent; color:#475569; border-color:#e2e8f0; }
+  .live-dot { width:6px; height:6px; border-radius:50%; background:#00bcd4; display:inline-block; animation:blink 2s infinite; }
+  @keyframes blink { 0%,100%{opacity:1;} 50%{opacity:.3;} }
+  .tab-active { background:#fff; color:#006064; font-weight:600; box-shadow:0 1px 3px rgba(0,150,170,.1); border-radius:6px; }
+  .queue-row:hover { background:#f8fdfe; }
+  .queue-row-active { background:#e0f7fa; border-left:2px solid #00bcd4; }
+  .queue-row-emerg { background:#fef2f2; border-left:2px solid #ef4444; }
+  .timer-pulse { animation:blink 1s infinite; }
+</style>
+</head>
+<body class="bg-background text-foreground min-h-screen">
+
+<!-- HEADER -->
+<header class="h-14 bg-card border-b border-border flex items-center justify-between px-7 sticky top-0 z-40">
+  <div class="flex items-center gap-3">
+    <div class="flex items-center gap-2">
+      <div class="w-7 h-7 bg-teal-500 rounded-md flex items-center justify-center">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+      </div>
+      <span class="text-[15px] font-bold text-foreground tracking-tight">MediQueue</span>
+    </div>
+    <svg class="w-4 h-4 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+    <span class="text-[11px] font-semibold text-teal-700 bg-teal-50 border border-teal-100 px-2.5 py-1 rounded-full">Doctor Portal</span>
+  </div>
+  <div class="flex items-center gap-2">
+    <div class="flex items-center gap-1.5 text-[12px] font-semibold text-teal-700 bg-teal-50 border border-teal-100 px-3 py-1.5 rounded-full">
+      <span class="live-dot"></span> Live · Counter 4
+    </div>
+    <button class="text-[13px] font-medium text-muted-foreground hover:text-foreground hover:bg-muted px-3 py-1.5 rounded-md transition-colors cursor-pointer border-none bg-transparent font-sans">🏖 Leave</button>
+    <button class="relative w-8 h-8 rounded-md border border-border bg-card flex items-center justify-center hover:bg-teal-50 transition-colors cursor-pointer">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#4a9a9e" stroke-width="2" stroke-linecap="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+      <span class="absolute top-1 right-1 w-1.5 h-1.5 bg-red-500 rounded-full border border-white"></span>
+    </button>
+    <div class="flex items-center gap-2 pl-1 pr-3 py-1 rounded-full border border-border hover:bg-muted cursor-pointer transition-colors">
+      <div class="w-6 h-6 rounded-full bg-gradient-to-br from-teal-400 to-teal-800 flex items-center justify-center text-[10px] font-bold text-white">DM</div>
+      <span class="text-[13px] font-semibold text-foreground">Dr. Deepak Mehta</span>
+    </div>
+  </div>
+</header>
+
+<div class="max-w-[1400px] mx-auto px-7 py-6 pb-10">
+
+  <!-- Stats -->
+  <div class="grid grid-cols-4 gap-4 mb-6">
+    <div class="shadcn-card p-4">
+      <div class="flex items-center justify-between mb-3">
+        <p class="text-[12px] font-medium text-muted-foreground uppercase tracking-wide">In Queue</p>
+        <div class="w-7 h-7 rounded-md bg-teal-50 flex items-center justify-center">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#0097a7" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+        </div>
+      </div>
+      <p class="text-[28px] font-bold text-foreground tracking-tight leading-none">24</p>
+      <p class="text-[12px] text-muted-foreground mt-2">Waiting now</p>
+    </div>
+    <div class="shadcn-card p-4">
+      <div class="flex items-center justify-between mb-3">
+        <p class="text-[12px] font-medium text-muted-foreground uppercase tracking-wide">Treated</p>
+        <div class="w-7 h-7 rounded-md bg-green-50 flex items-center justify-center">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+      </div>
+      <p class="text-[28px] font-bold text-green-600 tracking-tight leading-none">18</p>
+      <p class="text-[12px] text-green-600 mt-2 font-medium">+3 today</p>
+    </div>
+    <div class="shadcn-card p-4">
+      <div class="flex items-center justify-between mb-3">
+        <p class="text-[12px] font-medium text-muted-foreground uppercase tracking-wide">Avg Time</p>
+        <div class="w-7 h-7 rounded-md bg-amber-50 flex items-center justify-center">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        </div>
+      </div>
+      <p class="text-[28px] font-bold text-amber-600 tracking-tight leading-none">16<span class="text-[14px] font-semibold">m</span></p>
+      <p class="text-[12px] text-muted-foreground mt-2">Per patient</p>
+    </div>
+    <div class="shadcn-card p-4">
+      <div class="flex items-center justify-between mb-3">
+        <p class="text-[12px] font-medium text-muted-foreground uppercase tracking-wide">Emergency</p>
+        <div class="w-7 h-7 rounded-md bg-red-50 flex items-center justify-center">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2" stroke-linecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+        </div>
+      </div>
+      <p class="text-[28px] font-bold text-red-600 tracking-tight leading-none">2</p>
+      <p class="text-[12px] text-red-600 mt-2 font-medium">Urgent cases</p>
+    </div>
+  </div>
+
+  <!-- Tabs (shadcn TabsList style) -->
+  <div class="inline-flex bg-teal-50 border border-teal-100 rounded-lg p-1 gap-0.5 mb-5">
+    <button class="tab-active px-4 py-1.5 text-[13px] font-sans cursor-pointer transition-all">Queue <span class="ml-1 bg-teal-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">24</span></button>
+    <button class="px-4 py-1.5 text-[13px] text-muted-foreground font-medium font-sans rounded-md hover:text-foreground cursor-pointer transition-all bg-transparent border-none">Appointments <span class="ml-1 bg-teal-100 text-teal-700 text-[10px] font-bold px-1.5 py-0.5 rounded-full">8</span></button>
+    <button class="px-4 py-1.5 text-[13px] text-muted-foreground font-medium font-sans rounded-md hover:text-foreground cursor-pointer transition-all bg-transparent border-none">History</button>
+    <button class="px-4 py-1.5 text-[13px] text-muted-foreground font-medium font-sans rounded-md hover:text-foreground cursor-pointer transition-all bg-transparent border-none">Analytics</button>
+    <button class="px-4 py-1.5 text-[13px] text-muted-foreground font-medium font-sans rounded-md hover:text-foreground cursor-pointer transition-all bg-transparent border-none">Calendar</button>
+  </div>
+
+  <!-- Main layout -->
+  <div class="grid grid-cols-[1fr_360px] gap-5">
+
+    <!-- Queue list -->
+    <div class="shadcn-card overflow-hidden">
+      <div class="flex items-center justify-between px-5 py-3.5 border-b border-border">
+        <div>
+          <h3 class="text-[14px] font-semibold text-foreground">Waiting Queue</h3>
+          <p class="text-[12px] text-muted-foreground mt-0.5">24 patients · sorted by priority</p>
+        </div>
+        <button class="flex items-center gap-1.5 text-[12px] font-medium text-muted-foreground border border-border rounded-md px-2.5 py-1.5 hover:bg-muted cursor-pointer transition-colors bg-transparent font-sans">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          Search
+        </button>
+      </div>
+
+      <!-- Active patient -->
+      <div class="queue-row queue-row-active flex items-center gap-3 px-5 py-3.5 border-b border-border cursor-pointer">
+        <div class="w-11 h-11 rounded-xl bg-teal-500 text-white flex items-center justify-center text-[13px] font-bold flex-shrink-0">A01</div>
+        <div class="flex-1">
+          <div class="flex items-center gap-2">
+            <span class="text-[13.5px] font-semibold text-foreground">Ravi Sharma</span>
+            <span class="shadcn-badge badge-teal text-[10px]">In treatment</span>
+          </div>
+          <p class="text-[11.5px] text-muted-foreground mt-0.5">42 yr · Male · Diabetes follow-up</p>
+          <div class="flex gap-1.5 mt-1.5">
+            <span class="shadcn-badge badge-success text-[10px]">Insurance ✓</span>
+            <span class="shadcn-badge badge-outline text-[10px]">3rd visit</span>
+          </div>
+        </div>
+        <div class="text-right flex-shrink-0">
+          <p class="text-[16px] font-bold text-teal-600">14:32</p>
+          <p class="text-[11px] text-muted-foreground">in session</p>
+        </div>
+      </div>
+
+      <!-- Emergency -->
+      <div class="queue-row queue-row-emerg flex items-center gap-3 px-5 py-3.5 border-b border-border cursor-pointer">
+        <div class="w-11 h-11 rounded-xl bg-red-500 text-white flex items-center justify-center text-lg flex-shrink-0">🚨</div>
+        <div class="flex-1">
+          <div class="flex items-center gap-2">
+            <span class="text-[13.5px] font-semibold text-foreground">Sunita Rao</span>
+            <span class="shadcn-badge badge-danger text-[10px]">Emergency</span>
+          </div>
+          <p class="text-[11.5px] text-muted-foreground mt-0.5">67 yr · Female · Chest pain</p>
+          <div class="flex gap-1.5 mt-1.5"><span class="shadcn-badge badge-danger text-[10px]">Critical</span></div>
+        </div>
+        <div class="text-right flex-shrink-0">
+          <p class="text-[13px] font-bold text-red-600">Next</p>
+          <p class="text-[11px] text-muted-foreground">priority</p>
+        </div>
+      </div>
+
+      <!-- Regular -->
+      <div class="queue-row flex items-center gap-3 px-5 py-3.5 border-b border-border cursor-pointer transition-colors">
+        <div class="w-11 h-11 rounded-xl bg-teal-50 border border-teal-100 text-teal-700 flex items-center justify-center text-[13px] font-bold flex-shrink-0">A03</div>
+        <div class="flex-1">
+          <p class="text-[13.5px] font-semibold text-foreground">Ankit Joshi</p>
+          <p class="text-[11.5px] text-muted-foreground mt-0.5">28 yr · Male · General checkup</p>
+        </div>
+        <div class="flex items-center gap-3 flex-shrink-0">
+          <div class="text-right"><p class="text-[13px] font-semibold text-muted-foreground">~18m</p><p class="text-[11px] text-muted-foreground">est. wait</p></div>
+          <div class="flex flex-col gap-1">
+            <button class="text-[11px] font-medium border border-border rounded-md px-2 py-1 hover:bg-muted cursor-pointer bg-transparent font-sans">Skip</button>
+            <button class="text-[11px] font-medium border border-border rounded-md px-2 py-1 hover:bg-muted cursor-pointer bg-transparent font-sans">Transfer</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="queue-row flex items-center gap-3 px-5 py-3.5 border-b border-border cursor-pointer transition-colors">
+        <div class="w-11 h-11 rounded-xl bg-teal-50 border border-teal-100 text-teal-700 flex items-center justify-center text-[13px] font-bold flex-shrink-0">A04</div>
+        <div class="flex-1">
+          <p class="text-[13.5px] font-semibold text-foreground">Priya Mehta</p>
+          <p class="text-[11.5px] text-muted-foreground mt-0.5">55 yr · Female · HbA1c review</p>
+          <div class="flex gap-1.5 mt-1.5"><span class="shadcn-badge badge-warning text-[10px]">Lab results ready</span></div>
+        </div>
+        <div class="flex items-center gap-3 flex-shrink-0">
+          <div class="text-right"><p class="text-[13px] font-semibold text-muted-foreground">~34m</p><p class="text-[11px] text-muted-foreground">est. wait</p></div>
+          <div class="flex flex-col gap-1">
+            <button class="text-[11px] font-medium border border-border rounded-md px-2 py-1 hover:bg-muted cursor-pointer bg-transparent font-sans">Skip</button>
+            <button class="text-[11px] font-medium border border-border rounded-md px-2 py-1 hover:bg-muted cursor-pointer bg-transparent font-sans">Transfer</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="queue-row flex items-center gap-3 px-5 py-3.5 cursor-pointer transition-colors">
+        <div class="w-11 h-11 rounded-xl bg-teal-50 border border-teal-100 text-teal-700 flex items-center justify-center text-[13px] font-bold flex-shrink-0">A05</div>
+        <div class="flex-1">
+          <p class="text-[13.5px] font-semibold text-foreground">Mohan Kulkarni</p>
+          <p class="text-[11.5px] text-muted-foreground mt-0.5">71 yr · Male · Thyroid follow-up</p>
+          <div class="flex gap-1.5 mt-1.5"><span class="shadcn-badge badge-outline text-[10px]">Senior</span></div>
+        </div>
+        <div class="flex items-center gap-3 flex-shrink-0">
+          <div class="text-right"><p class="text-[13px] font-semibold text-muted-foreground">~48m</p><p class="text-[11px] text-muted-foreground">est. wait</p></div>
+          <div class="flex flex-col gap-1">
+            <button class="text-[11px] font-medium border border-border rounded-md px-2 py-1 hover:bg-muted cursor-pointer bg-transparent font-sans">Skip</button>
+            <button class="text-[11px] font-medium border border-border rounded-md px-2 py-1 hover:bg-muted cursor-pointer bg-transparent font-sans">Transfer</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="px-5 py-3 text-center text-[12px] text-muted-foreground">+ 19 more patients in queue</div>
+    </div>
+
+    <!-- Right column -->
+    <div class="flex flex-col gap-4">
+
+      <!-- Current patient card -->
+      <div class="overflow-hidden rounded-lg border border-teal-100 shadow-sm">
+        <!-- Header -->
+        <div class="bg-gradient-to-br from-teal-700 to-teal-900 p-5 text-white">
+          <p class="text-[10px] font-semibold tracking-widest opacity-70 uppercase">Currently treating</p>
+          <p class="text-[22px] font-bold mt-1 tracking-tight">Ravi Sharma</p>
+          <p class="text-[12px] opacity-70 mt-1">Token A01 · Counter 4 · Diabetes</p>
+          <div class="flex gap-3 mt-4">
+            <div class="bg-white/10 rounded-lg px-3 py-2 text-center">
+              <p class="text-[18px] font-bold">42</p>
+              <p class="text-[10px] opacity-70 mt-0.5">Age</p>
+            </div>
+            <div class="bg-white/10 rounded-lg px-3 py-2 text-center">
+              <p class="text-[18px] font-bold">3rd</p>
+              <p class="text-[10px] opacity-70 mt-0.5">Visit</p>
+            </div>
+            <div class="bg-white/10 rounded-lg px-3 py-2 text-center">
+              <p class="text-[18px] font-bold">8.4%</p>
+              <p class="text-[10px] opacity-70 mt-0.5">HbA1c</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Body -->
+        <div class="bg-white p-4">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <p class="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Session</p>
+              <p class="text-[28px] font-bold text-teal-700 tracking-tight timer-pulse">14:32</p>
+            </div>
+            <span class="shadcn-badge badge-teal text-[12px] px-3 py-1">● In treatment</span>
+          </div>
+
+          <div class="space-y-0 divide-y divide-border">
+            <div class="flex justify-between items-center py-2.5">
+              <span class="text-[12px] font-medium text-muted-foreground">Insurance</span>
+              <span class="text-[13px] font-semibold text-foreground">Star Health ✓</span>
+            </div>
+            <div class="flex justify-between items-center py-2.5">
+              <span class="text-[12px] font-medium text-muted-foreground">Last visit</span>
+              <span class="text-[13px] font-semibold text-foreground">March 1, 2026</span>
+            </div>
+            <div class="flex justify-between items-center py-2.5">
+              <span class="text-[12px] font-medium text-muted-foreground">HbA1c</span>
+              <span class="text-[13px] font-bold text-red-600">8.4% ↑ High</span>
+            </div>
+            <div class="flex justify-between items-center py-2.5">
+              <span class="text-[12px] font-medium text-muted-foreground">Medication</span>
+              <span class="text-[13px] font-semibold text-foreground">Metformin 500mg</span>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2 mt-4">
+            <button class="col-span-2 py-2.5 bg-teal-500 hover:bg-teal-600 text-white text-[13.5px] font-semibold rounded-md transition-colors cursor-pointer border-none font-sans">✓ Complete &amp; Call Next</button>
+            <button class="py-2 bg-teal-50 hover:bg-teal-100 text-teal-800 text-[13px] font-semibold rounded-md border border-teal-100 hover:border-teal-200 transition-all cursor-pointer font-sans">⏭ Skip</button>
+            <button class="py-2 bg-teal-50 hover:bg-teal-100 text-teal-800 text-[13px] font-semibold rounded-md border border-teal-100 hover:border-teal-200 transition-all cursor-pointer font-sans">↗ Transfer</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick links -->
+      <div class="shadcn-card overflow-hidden">
+        <div class="px-4 py-3.5 border-b border-border">
+          <h3 class="text-[14px] font-semibold text-foreground">Quick Actions</h3>
+        </div>
+        <div>
+          <div class="flex items-center gap-3 px-4 py-3 border-b border-border hover:bg-muted/50 cursor-pointer transition-colors">
+            <div class="w-8 h-8 rounded-md bg-teal-50 flex items-center justify-center flex-shrink-0">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0097a7" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            </div>
+            <span class="text-[13px] font-medium text-foreground flex-1">View Patient History</span>
+            <svg class="w-4 h-4 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+          </div>
+          <div class="flex items-center gap-3 px-4 py-3 border-b border-border hover:bg-muted/50 cursor-pointer transition-colors">
+            <div class="w-8 h-8 rounded-md bg-teal-50 flex items-center justify-center flex-shrink-0">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0097a7" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            </div>
+            <span class="text-[13px] font-medium text-foreground flex-1">Write Treatment Report</span>
+            <svg class="w-4 h-4 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+          </div>
+          <div class="flex items-center gap-3 px-4 py-3 border-b border-border hover:bg-muted/50 cursor-pointer transition-colors">
+            <div class="w-8 h-8 rounded-md bg-teal-50 flex items-center justify-center flex-shrink-0">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0097a7" stroke-width="2" stroke-linecap="round"><path d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18"/></svg>
+            </div>
+            <span class="text-[13px] font-medium text-foreground flex-1">Order Lab Test</span>
+            <svg class="w-4 h-4 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+          </div>
+          <div class="flex items-center gap-3 px-4 py-3 hover:bg-muted/50 cursor-pointer transition-colors">
+            <div class="w-8 h-8 rounded-md bg-amber-50 flex items-center justify-center flex-shrink-0">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            </div>
+            <span class="text-[13px] font-medium text-foreground flex-1">Collect Patient Rating</span>
+            <svg class="w-4 h-4 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
