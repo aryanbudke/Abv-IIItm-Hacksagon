@@ -1,0 +1,127 @@
+[00:00:23.571] Server  LOG     ○ Compiling middleware ...
+[00:00:25.335] Server  WARN    ⚠ The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
+[00:00:28.807] Server  LOG     ✓ Ready in 21.1s
+[00:00:40.591] Server  ERROR   Clerk: Clock skew detected. This usually means that your system clock is inaccurate. Clerk will attempt to account for the clock skew in development.
+
+To resolve this issue, make sure your system's clock is set to the correct time (e.g. turn off and on automatic time synchronization).
+
+---
+
+JWT cannot be used prior to not before date claim (nbf). Not before date: Fri, 03 Apr 2026 08:50:13 GMT; Current date: Fri, 03 Apr 2026 08:48:32 GMT; (reason=token-not-active-yet, token-carrier=cookie)
+[00:00:41.332] Server  ERROR   Clerk: Clock skew detected. This usually means that your system clock is inaccurate. Clerk will attempt to account for the clock skew in development.
+
+To resolve this issue, make sure your system's clock is set to the correct time (e.g. turn off and on automatic time synchronization).
+
+---
+
+JWT cannot be used prior to not before date claim (nbf). Not before date: Fri, 03 Apr 2026 08:50:13 GMT; Current date: Fri, 03 Apr 2026 08:48:33 GMT; (reason=token-not-active-yet, token-carrier=cookie)
+[00:00:41.829] Server  ERROR   Clerk: Clock skew detected. This usually means that your system clock is inaccurate. Clerk will attempt to account for the clock skew in development.
+
+To resolve this issue, make sure your system's clock is set to the correct time (e.g. turn off and on automatic time synchronization).
+
+---
+
+JWT cannot be used prior to not before date claim (nbf). Not before date: Fri, 03 Apr 2026 08:50:14 GMT; Current date: Fri, 03 Apr 2026 08:48:33 GMT; (reason=token-not-active-yet, token-carrier=cookie)
+[00:00:42.470] Server  ERROR   Clerk: Clock skew detected. This usually means that your system clock is inaccurate. Clerk will attempt to account for the clock skew in development.
+
+To resolve this issue, make sure your system's clock is set to the correct time (e.g. turn off and on automatic time synchronization).
+
+---
+
+JWT cannot be used prior to not before date claim (nbf). Not before date: Fri, 03 Apr 2026 08:50:14 GMT; Current date: Fri, 03 Apr 2026 08:48:34 GMT; (reason=token-not-active-yet, token-carrier=cookie)
+[00:00:42.484] Server  LOG     Clerk: Refreshing the session token resulted in an infinite redirect loop. This usually means that your Clerk instance keys do not match - make sure to copy the correct publishable and secret keys from the Clerk dashboard.
+[00:00:45.502] Server  LOG     ○ Compiling / ...
+[00:01:00.697] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:01:01.372] Browser ERROR   A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+%s%s https://react.dev/link/hydration-mismatch 
+
+  ...
+    <__next_root_layout_boundary__>
+      <SegmentViewNode type="layout" pagePath="layout.tsx">
+        <SegmentTrieNode>
+        <link>
+        <script>
+        <script>
+        <script>
+        <script>
+        <RootLayout>
+          <ClerkProvider>
+            <ClientClerkProvider publishableKey="pk_test_dm..." proxyUrl="" domain="" isSatellite={false} ...>
+              ...
+                <ClerkProvider publishableKey="pk_test_dm..." proxyUrl="" domain="" isSatellite={false} ...>
+                  <ClerkProviderBase publishableKey="pk_test_dm..." proxyUrl="" domain="" isSatellite={false} ...>
+                    <ClerkContextProvider initialState={undefined} clerk={{clerkjs:null, ...}} clerkStatus="loading">
+                      <InitialStateProvider initialState={undefined}>
+                        <__experimental_CheckoutProvider value={undefined}>
+                          <RouterTelemetry>
+                          <ClerkScripts>
+                          <html
+                            lang="en"
+                            className="inter_7449a475-module__iUY9fW__variable geistmono_e4608d3e-module__p-BCeq__vari..."
+-                           crxemulator=""
+-                           crxlauncher=""
+                          >
+
+[00:01:05.362] Browser WARN    Clerk: Clerk has been loaded with development keys. Development instances have strict usage limits and should not be used when deploying your application to production. Learn more: https://clerk.com/docs/deployments/overview
+[00:01:39.933] Browser WARN    Image with src "/images/doctor-consult.jpg" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[00:01:39.933] Browser WARN    Image with src "/images/hospital.jpg" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[00:01:39.933] Browser WARN    Image with src "/images/hospital.jpg" has "fill" and parent element with invalid "position". Provided "static" should be one of absolute,fixed,relative.
+[00:01:39.933] Browser WARN    Image with src "/images/doctor-patient.jpg" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[00:02:59.536] Server  ERROR   Clerk: Clock skew detected. This usually means that your system clock is inaccurate. Clerk will attempt to account for the clock skew in development.
+
+To resolve this issue, make sure your system's clock is set to the correct time (e.g. turn off and on automatic time synchronization).
+
+---
+
+JWT cannot be used prior to not before date claim (nbf). Not before date: Fri, 03 Apr 2026 08:52:32 GMT; Current date: Fri, 03 Apr 2026 08:50:51 GMT; (reason=token-not-active-yet, token-carrier=cookie)
+[00:03:00.098] Server  ERROR   Clerk: Clock skew detected. This usually means that your system clock is inaccurate. Clerk will attempt to account for the clock skew in development.
+
+To resolve this issue, make sure your system's clock is set to the correct time (e.g. turn off and on automatic time synchronization).
+
+---
+
+JWT cannot be used prior to not before date claim (nbf). Not before date: Fri, 03 Apr 2026 08:52:32 GMT; Current date: Fri, 03 Apr 2026 08:50:51 GMT; (reason=token-not-active-yet, token-carrier=cookie)
+[00:03:03.412] Server  ERROR   Clerk: Clock skew detected. This usually means that your system clock is inaccurate. Clerk will attempt to account for the clock skew in development.
+
+To resolve this issue, make sure your system's clock is set to the correct time (e.g. turn off and on automatic time synchronization).
+
+---
+
+JWT cannot be used prior to not before date claim (nbf). Not before date: Fri, 03 Apr 2026 08:52:35 GMT; Current date: Fri, 03 Apr 2026 08:50:55 GMT; (reason=token-not-active-yet, token-carrier=cookie)
+[00:03:03.983] Server  ERROR   Clerk: Clock skew detected. This usually means that your system clock is inaccurate. Clerk will attempt to account for the clock skew in development.
+
+To resolve this issue, make sure your system's clock is set to the correct time (e.g. turn off and on automatic time synchronization).
+
+---
+
+JWT cannot be used prior to not before date claim (nbf). Not before date: Fri, 03 Apr 2026 08:52:36 GMT; Current date: Fri, 03 Apr 2026 08:50:55 GMT; (reason=token-not-active-yet, token-carrier=cookie)
+[00:03:04.515] Server  ERROR   Clerk: Clock skew detected. This usually means that your system clock is inaccurate. Clerk will attempt to account for the clock skew in development.
+
+To resolve this issue, make sure your system's clock is set to the correct time (e.g. turn off and on automatic time synchronization).
+
+---
+
+JWT cannot be used prior to not before date claim (nbf). Not before date: Fri, 03 Apr 2026 08:52:37 GMT; Current date: Fri, 03 Apr 2026 08:50:56 GMT; (reason=token-not-active-yet, token-carrier=cookie)
+[00:03:05.009] Server  ERROR   Clerk: Clock skew detected. This usually means that your system clock is inaccurate. Clerk will attempt to account for the clock skew in development.
+
+To resolve this issue, make sure your system's clock is set to the correct time (e.g. turn off and on automatic time synchronization).
+
+---
+
+JWT cannot be used prior to not before date claim (nbf). Not before date: Fri, 03 Apr 2026 08:52:37 GMT; Current date: Fri, 03 Apr 2026 08:50:56 GMT; (reason=token-not-active-yet, token-carrier=cookie)
+[00:03:05.039] Server  LOG     Clerk: Refreshing the session token resulted in an infinite redirect loop. This usually means that your Clerk instance keys do not match - make sure to copy the correct publishable and secret keys from the Clerk dashboard.
+[00:03:05.553] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:03:09.365] Browser WARN    Clerk: Clerk has been loaded with development keys. Development instances have strict usage limits and should not be used when deploying your application to production. Learn more: https://clerk.com/docs/deployments/overview
+[00:11:17.584] Browser WARN    Image with src "/images/doctor-consult.jpg" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[00:11:17.584] Browser WARN    Image with src "/images/hospital.jpg" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[00:11:17.584] Browser WARN    Image with src "/images/hospital.jpg" has "fill" and parent element with invalid "position". Provided "static" should be one of absolute,fixed,relative.
+[00:11:17.584] Browser WARN    Image with src "/images/doctor-patient.jpg" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes

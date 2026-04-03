@@ -1,0 +1,25 @@
+/* [project]/src/app/geistmono_e4608d3e.module.css [app-client] (css) */
+@font-face {
+  font-family: geistMono;
+  src: url("../media/GeistMono_Regular-s.p.69a401ff.woff2") format("woff2");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: geistMono Fallback;
+  src: local(Arial);
+  ascent-override: 76.43%;
+  descent-override: 22.43%;
+  line-gap-override: 0.0%;
+  size-adjust: 131.49%;
+}
+
+.geistmono_e4608d3e-module__p-BCeq__className {
+  font-family: geistMono, geistMono Fallback;
+}
+
+.geistmono_e4608d3e-module__p-BCeq__variable {
+  --font-geist-mono: "geistMono", "geistMono Fallback";
+}
+
+/*# sourceMappingURL=src_app_geistmono_e4608d3e_module_css_bad6b30c._.single.css.map*/
