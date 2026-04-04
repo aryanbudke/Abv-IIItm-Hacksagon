@@ -1,0 +1,23 @@
+{
+  "app": {
+    "[project]/src/app/_not-found/page": [
+      "static/media/inter_latin_300_normal-s.p.0be96e5e.woff2",
+      "static/media/inter_latin_400_normal-s.p.c8c144e0.woff2",
+      "static/media/inter_latin_500_normal-s.p.30043d57.woff2",
+      "static/media/inter_latin_600_normal-s.p.e2fe7b39.woff2",
+      "static/media/inter_latin_700_normal-s.p.44b600fb.woff2",
+      "static/media/GeistMono_Regular-s.p.69a401ff.woff2"
+    ],
+    "[project]/src/app/page": [
+      "static/media/inter_latin_300_normal-s.p.0be96e5e.woff2",
+      "static/media/inter_latin_400_normal-s.p.c8c144e0.woff2",
+      "static/media/inter_latin_500_normal-s.p.30043d57.woff2",
+      "static/media/inter_latin_600_normal-s.p.e2fe7b39.woff2",
+      "static/media/inter_latin_700_normal-s.p.44b600fb.woff2",
+      "static/media/GeistMono_Regular-s.p.69a401ff.woff2"
+    ]
+  },
+  "appUsingSizeAdjust": true,
+  "pages": {},
+  "pagesUsingSizeAdjust": false
+}
