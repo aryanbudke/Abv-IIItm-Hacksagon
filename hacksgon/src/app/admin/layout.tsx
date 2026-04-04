@@ -8,7 +8,7 @@ import { usePathname } from "next/navigation";
 import { UserButton } from "@clerk/nextjs";
 import {
   LayoutDashboard, Building2, Stethoscope, Users, Calendar,
-  GitBranch, Activity, Settings, Shield, Zap, Loader2, History
+  GitBranch, Activity, Zap, Loader2, History
 } from "lucide-react";
 import {
   Sidebar,
@@ -40,9 +40,6 @@ const NAV_MAIN = [
   { label: "History",      href: "/admin/history",      icon: History },
 ];
 
-const NAV_SYSTEM = [
-  { label: "Settings", href: "/admin/settings", icon: Settings },
-];
 
 function AdminSidebar({ pathname }: { pathname: string }) {
   const { state } = useSidebar();
@@ -86,23 +83,6 @@ function AdminSidebar({ pathname }: { pathname: string }) {
           </SidebarMenu>
         </SidebarGroup>
 
-        <SidebarGroup className="mt-auto">
-          <SidebarGroupLabel className="text-sidebar-foreground/40 uppercase tracking-wider text-[10px]">
-            System
-          </SidebarGroupLabel>
-          <SidebarMenu>
-            {NAV_SYSTEM.map(item => (
-              <SidebarMenuItem key={item.href}>
-                <SidebarMenuButton asChild isActive={pathname.startsWith(item.href)} tooltip={item.label}>
-                  <Link href={item.href} className="no-underline">
-                    <item.icon />
-                    <span>{item.label}</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            ))}
-          </SidebarMenu>
-        </SidebarGroup>
       </SidebarContent>
 
       <SidebarFooter>

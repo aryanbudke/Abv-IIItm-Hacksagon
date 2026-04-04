@@ -47,8 +47,6 @@ export interface Doctor {
   specialization: string;
   qualification: string;
   experience: number;
-  rating: number;
-  totalRatings: number;
   availability: DoctorAvailability[];
   isOnLeave: boolean;
   leaveFrom?: Date;
@@ -93,6 +91,7 @@ export interface QueueEntry {
   treatmentType: string;
   isEmergency: boolean;
   // faceEmbedding?: number[]; // MVP: Face verification disabled
+  chiefComplaint?: string;
   qrCode: string;
   status: 'waiting' | 'in-treatment' | 'completed' | 'cancelled';
   estimatedWaitTime?: number;
@@ -118,17 +117,7 @@ export interface EmergencyQueue {
   updatedAt: Date;
 }
 
-export interface Rating {
-  id: string;
-  patientId: string;
-  doctorId: string;
-  hospitalId: string;
-  appointmentId: string;
-  rating: number;
-  feedback: string;
-  treatmentSuccess: boolean;
-  createdAt: Date;
-}
+
 
 export interface HistoricalData {
   id: string;

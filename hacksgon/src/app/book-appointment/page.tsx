@@ -744,7 +744,7 @@ export default function BookAppointmentPage() {
                     {doctors.length > 0 ? (
                       doctors.map((doctor) => (
                         <option key={doctor.id} value={doctor.id}>
-                          {doctor.name} - ⭐ {doctor.rating} ({doctor.total_ratings} reviews)
+                          {doctor.name}
                         </option>
                       ))
                     ) : selectedDepartment ? (

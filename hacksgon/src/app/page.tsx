@@ -9,8 +9,9 @@ import {
   CheckCircle, QrCode, ChevronRight, ChevronDown,
   Stethoscope, Hospital, LayoutDashboard, Menu, X,
   Phone, MapPin, Star,
-  Play, ArrowUpRight, Search,
+  Play, ArrowUpRight, Search, Ticket,
 } from "lucide-react";
+import { supabase } from "@/lib/supabase/client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
@@ -54,6 +55,9 @@ export default function HomePage() {
   const [showDropdown, setShowDropdown]       = useState(false);
   const [searchLoading, setSearchLoading]     = useState(false);
   const searchRef                             = useRef<HTMLDivElement>(null);
+
+  // Active queue token for nav link
+  const [activeTokenId, setActiveTokenId] = useState<string | null>(null);
 
   // Real doctors from DB
   const [featuredDoctors, setFeaturedDoctors] = useState<any[]>([]);
@@ -121,6 +125,20 @@ export default function HomePage() {
     return () => window.removeEventListener("click", close);
   }, [dashDropdown]);
 
+  // Fetch user's latest active queue token
+  useEffect(() => {
+    if (!isSignedIn || !user) return;
+    supabase
+      .from("queue")
+      .select("id")
+      .eq("patient_id", user.id)
+      .in("status", ["waiting", "in-treatment"])
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .single()
+      .then(({ data }) => setActiveTokenId(data?.id ?? null));
+  }, [isSignedIn, user]);
+
   if (!isLoaded) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: "#FAFAF6" }}>
@@ -150,7 +168,7 @@ export default function HomePage() {
           borderBottom: scrolled ? "1px solid rgba(0,0,0,0.08)" : "1px solid transparent",
         }}
       >
-        <div className="max-w-7xl mx-auto px-5 sm:px-8 flex items-center justify-between h-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-8 flex items-center justify-between h-16 sm:h-20">
           {/* Logo */}
           <Link href="/" className="no-underline">
             <Logo height={36} />
@@ -167,6 +185,13 @@ export default function HomePage() {
 
             {isSignedIn ? (
               <div className="flex items-center gap-3">
+                {activeTokenId && (
+                  <Link href={`/my-token/${activeTokenId}`}
+                    className="flex items-center gap-1.5 text-[14px] font-medium text-primary hover:text-primary/80 transition-colors no-underline">
+                    <Ticket size={15} />
+                    My Token
+                  </Link>
+                )}
                 <div className="relative">
                   <button
                     onClick={(e) => { e.stopPropagation(); setDashDropdown(!dashDropdown); }}
@@ -247,6 +272,12 @@ export default function HomePage() {
                     <Icon size={16} /> {label}
                   </Link>
                 ))}
+                {isSignedIn && activeTokenId && (
+                  <Link href={`/my-token/${activeTokenId}`} onClick={() => setMobileOpen(false)}
+                    className="flex items-center gap-2.5 px-4 py-3 rounded-xl text-sm font-medium text-primary hover:bg-primary/8 no-underline transition-colors">
+                    <Ticket size={16} /> My Token
+                  </Link>
+                )}
               </div>
             </motion.div>
           )}
@@ -272,8 +303,8 @@ export default function HomePage() {
 
               {/* Big Headline */}
               <motion.h1 variants={fadeUp} initial="hidden" animate="visible" custom={1}
-                className="font-black leading-[1.02] tracking-[-0.04em] mb-6"
-                style={{ fontSize: "clamp(44px,6.5vw,80px)" }}>
+                className="font-black leading-[1.08] tracking-[-0.04em] mb-6"
+                style={{ fontSize: "clamp(34px,9vw,80px)" }}>
                 Smart{" "}
                 <span className="relative inline-block">
                   <span className="text-primary">Healthcare</span>
@@ -291,21 +322,21 @@ export default function HomePage() {
 
               {/* CTAs */}
               <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={3}
-                className="flex flex-wrap items-center gap-4 mb-10">
+                className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 mb-10">
                 {isSignedIn ? (
                   <>
-                    <Link href="/join-queue" className="no-underline">
-                      <button className="flex items-center gap-2 px-7 py-3.5 rounded-full bg-primary text-white font-bold text-[15px] shadow-[0_4px_20px_rgba(0,188,212,0.35)] hover:-translate-y-0.5 hover:shadow-[0_8px_30px_rgba(0,188,212,0.45)] transition-all duration-200">
+                    <Link href="/join-queue" className="no-underline w-full sm:w-auto">
+                      <button className="w-full flex items-center justify-center gap-2 px-7 py-3.5 rounded-full bg-primary text-white font-bold text-[15px] shadow-[0_4px_20px_rgba(0,188,212,0.35)] hover:-translate-y-0.5 hover:shadow-[0_8px_30px_rgba(0,188,212,0.45)] transition-all duration-200">
                         <Users size={16} /> Join Queue <ArrowUpRight size={15} />
                       </button>
                     </Link>
-                    <Link href="/book-appointment" className="no-underline">
-                      <button className="flex items-center gap-2 px-7 py-3.5 rounded-full border-2 border-[#0D0D0D] text-[#0D0D0D] font-bold text-[15px] hover:bg-[#0D0D0D] hover:text-white transition-all duration-200">
+                    <Link href="/book-appointment" className="no-underline w-full sm:w-auto">
+                      <button className="w-full flex items-center justify-center gap-2 px-7 py-3.5 rounded-full border-2 border-[#0D0D0D] text-[#0D0D0D] font-bold text-[15px] hover:bg-[#0D0D0D] hover:text-white transition-all duration-200">
                         <Calendar size={16} /> Book Appointment
                       </button>
                     </Link>
-                    <Link href="/digital-waiting-room" className="no-underline">
-                      <button className="flex items-center gap-2 px-5 py-3.5 rounded-full bg-white border border-black/10 text-[#555] font-semibold text-[14px] hover:border-primary hover:text-primary transition-all duration-200 shadow-sm">
+                    <Link href="/digital-waiting-room" className="no-underline w-full sm:w-auto">
+                      <button className="w-full flex items-center justify-center gap-2 px-5 py-3.5 rounded-full bg-white border border-black/10 text-[#555] font-semibold text-[14px] hover:border-primary hover:text-primary transition-all duration-200 shadow-sm">
                         <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
                         Live Queue
                       </button>
@@ -313,17 +344,19 @@ export default function HomePage() {
                   </>
                 ) : (
                   <>
-                    <Link href="/sign-up" className="no-underline">
-                      <button className="flex items-center gap-2 px-7 py-3.5 rounded-full bg-primary text-white font-bold text-[15px] shadow-[0_4px_20px_rgba(0,188,212,0.35)] hover:-translate-y-0.5 hover:shadow-[0_8px_30px_rgba(0,188,212,0.45)] transition-all duration-200">
+                    <Link href="/sign-up" className="no-underline w-full sm:w-auto">
+                      <button className="w-full flex items-center justify-center gap-2 px-7 py-3.5 rounded-full bg-primary text-white font-bold text-[15px] shadow-[0_4px_20px_rgba(0,188,212,0.35)] hover:-translate-y-0.5 hover:shadow-[0_8px_30px_rgba(0,188,212,0.45)] transition-all duration-200">
                         Book Schedule <ArrowUpRight size={15} />
                       </button>
                     </Link>
-                    <Link href="/sign-in" className="no-underline">
-                      <button className="flex items-center gap-2 w-12 h-12 rounded-full border-2 border-[#0D0D0D] justify-center hover:bg-[#0D0D0D] hover:text-white transition-all duration-200 group">
-                        <Play size={15} className="text-[#0D0D0D] group-hover:text-white ml-0.5" fill="currentColor" />
-                      </button>
-                    </Link>
-                    <span className="text-[15px] font-medium text-[#555]">See a Demo</span>
+                    <div className="flex items-center gap-4">
+                      <Link href="/sign-in" className="no-underline">
+                        <button className="flex items-center gap-2 w-12 h-12 rounded-full border-2 border-[#0D0D0D] justify-center hover:bg-[#0D0D0D] hover:text-white transition-all duration-200 group">
+                          <Play size={15} className="text-[#0D0D0D] group-hover:text-white ml-0.5" fill="currentColor" />
+                        </button>
+                      </Link>
+                      <span className="text-[15px] font-medium text-[#555]">See a Demo</span>
+                    </div>
                   </>
                 )}
               </motion.div>
@@ -339,7 +372,7 @@ export default function HomePage() {
 
               {/* Trust badges */}
               <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={5}
-                className="flex flex-wrap gap-3">
+                className="flex flex-wrap justify-center sm:justify-start gap-2.5 sm:gap-3">
                 {[
                   { icon: Shield,      label: "HIPAA Compliant" },
                   { icon: CheckCircle, label: "Real-time Updates" },
@@ -458,7 +491,7 @@ export default function HomePage() {
 
           {/* Tab pills */}
           <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }}
-            className="flex flex-wrap gap-2 sm:gap-3 mb-10 sm:mb-12">
+            className="flex flex-wrap justify-center sm:justify-start gap-2.5 sm:gap-3 mb-10 sm:mb-12">
             {SERVICE_TABS.map((tab, i) => (
               <button key={tab} onClick={() => setActiveTab(i)}
                 className={`px-5 py-2 rounded-full text-[13px] font-bold border-2 transition-all duration-200 ${
@@ -548,7 +581,7 @@ export default function HomePage() {
                     </div>
                   ))}
                 </div>
-                <div className="p-5 grid grid-cols-3 gap-3">
+                <div className="p-5 grid grid-cols-1 xs:grid-cols-3 gap-3">
                   {[
                     { val: "38",  label: "In Queue",     color: "text-primary" },
                     { val: "214", label: "Served Today",  color: "text-blue-600" },
@@ -574,7 +607,7 @@ export default function HomePage() {
             {/* Left: text */}
             <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }}>
               <p className="text-[12px] font-bold text-primary uppercase tracking-widest mb-4">Simple Process</p>
-              <h2 className="font-black text-[#0D0D0D] leading-tight mb-5" style={{ fontSize: "clamp(28px,4vw,44px)" }}>
+              <h2 className="font-black text-[#0D0D0D] leading-tight mb-5" style={{ fontSize: "clamp(26px,5vw,44px)" }}>
                 Choose the Right Care at the
                 Perfect <span className="text-primary">Medical Facility</span>
               </h2>
@@ -670,7 +703,7 @@ export default function HomePage() {
             {/* Right: hospital image + floating card */}
             <motion.div variants={fadeUp} initial="hidden" whileInView="visible" custom={1}
               viewport={{ once: true }} className="relative">
-              <div className="rounded-3xl overflow-hidden shadow-xl" style={{ height: "clamp(240px, 40vw, 380px)" }}>
+              <div className="rounded-3xl overflow-hidden shadow-xl" style={{ height: "clamp(200px, 40vw, 380px)" }}>
                 <Image src="/images/hospital.jpg" alt="Medical facility" fill className="object-cover" />
                 <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.3) 0%, transparent 60%)" }} />
               </div>
@@ -722,7 +755,7 @@ export default function HomePage() {
             {/* Left: featured doctor card */}
             <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }}
               className="relative">
-              <div className="rounded-3xl overflow-hidden relative" style={{ minHeight: 300 }}>
+              <div className="rounded-3xl overflow-hidden relative" style={{ minHeight: "clamp(240px, 35vw, 300px)" }}>
                 <Image
                   src="/images/doctor-patient.jpg"
                   alt="Doctor with patient"
@@ -749,10 +782,7 @@ export default function HomePage() {
                     <p className="text-[10px] text-[#888]">Cardiologist</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-1 mb-1">
-                  {[1,2,3,4,5].map(s => <Star key={s} size={9} className="text-amber-400" fill="currentColor" />)}
-                  <span className="text-[10px] font-bold text-[#0D0D0D] ml-1">5.0</span>
-                </div>
+
                 <p className="text-[10px] text-primary font-bold">Available Today</p>
               </motion.div>
             </motion.div>
@@ -785,7 +815,6 @@ export default function HomePage() {
                 ) : featuredDoctors.slice(0, 3).map((doc, i) => {
                   const initials = doc.name?.split(" ").filter(Boolean).slice(-2).map((w: string) => w[0]).join("") ?? "??";
                   const avatarColors = ["from-blue-100 to-blue-200","from-teal-100 to-teal-200","from-purple-100 to-purple-200"];
-                  const ratingFull  = Math.round(doc.rating ?? 0);
                   return (
                     <motion.div key={doc.id} variants={fadeUp} initial="hidden" whileInView="visible" custom={i}
                       viewport={{ once: true, margin: "-40px" }}
@@ -802,14 +831,7 @@ export default function HomePage() {
                           {doc.qualification}{doc.experience ? ` · ${doc.experience} yrs experience` : ""}
                         </p>
                       </div>
-                      <div className="flex flex-col items-end gap-0.5 shrink-0">
-                        <div className="flex gap-0.5">
-                          {[1,2,3,4,5].map(s => (
-                            <Star key={s} size={9} className={s <= ratingFull ? "text-amber-400" : "text-[#ddd]"} fill="currentColor" />
-                          ))}
-                        </div>
-                        {doc.rating > 0 && <span className="text-[10px] font-bold text-[#555]">{Number(doc.rating).toFixed(1)}</span>}
-                      </div>
+
                     </motion.div>
                   );
                 })}
@@ -855,7 +877,6 @@ export default function HomePage() {
                 const imgs = ["/images/doctor-consult.jpg","/images/doctor-hero.jpg","/images/doctor-office.jpg","/images/doctor-patient.jpg","/images/medical-pro.jpg","/images/hospital.jpg"];
                 return featuredDoctors.slice(0, 3).map((doc, i) => {
                   const initials = doc.name?.split(" ").filter(Boolean).slice(-2).map((w: string) => w[0]).join("") ?? "??";
-                  const ratingFull = Math.round(doc.rating ?? 0);
                   return (
                     <motion.div key={doc.id} variants={fadeUp} initial="hidden" whileInView="visible" custom={i}
                       viewport={{ once: true, margin: "-60px" }}
@@ -864,13 +885,7 @@ export default function HomePage() {
                       <div className="relative h-64 overflow-hidden">
                         <Image src={imgs[i % imgs.length]} alt={doc.name} fill className="object-cover group-hover:scale-105 transition-transform duration-500" />
                         <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.1) 60%)" }} />
-                        {/* Rating badge */}
-                        {doc.rating > 0 && (
-                          <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm rounded-full px-2.5 py-1 flex items-center gap-1 shadow-sm">
-                            <Star size={10} className="text-amber-400" fill="currentColor" />
-                            <span className="text-[11px] font-black text-[#0D0D0D]">{Number(doc.rating).toFixed(1)}</span>
-                          </div>
-                        )}
+
                         {/* Initials avatar overlay at bottom */}
                         <div className="absolute bottom-4 left-4 flex items-center gap-2.5">
                           <div className="w-9 h-9 rounded-full bg-white/20 backdrop-blur-sm border border-white/40 flex items-center justify-center text-[11px] font-black text-white">
@@ -919,10 +934,10 @@ export default function HomePage() {
 
       {/* ── CTA BANNER ────────────────────────────────────── */}
       {!isSignedIn && (
-        <section className="py-20 sm:py-24" style={{ background: "#FAFAF6" }}>
+        <section className="py-16 sm:py-24" style={{ background: "#FAFAF6" }}>
           <div className="max-w-5xl mx-auto px-5 sm:px-8">
             <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }}
-              className="relative rounded-3xl overflow-hidden p-10 sm:p-14 text-center"
+              className="relative rounded-3xl overflow-hidden p-8 sm:p-14 text-center"
               style={{ background: "linear-gradient(135deg, #0097A7 0%, #0BC5EA 50%, #38BDF8 100%)" }}>
               {/* Decorative waves */}
               <svg className="absolute left-0 top-0 h-full opacity-20" viewBox="0 0 200 400" fill="none">
@@ -960,7 +975,9 @@ export default function HomePage() {
             {/* Brand */}
             <div className="sm:col-span-2">
               <div className="mb-4">
-                 <Logo height={32} />
+                <Link href="/" className="no-underline inline-block">
+                  <Logo height={32} />
+                </Link>
               </div>
               <p className="text-[14px] text-[#777] leading-[1.7] max-w-[280px] mb-5">
                 The most trusted hospital queue management platform. Built to reduce wait anxiety and improve care outcomes.
@@ -972,8 +989,15 @@ export default function HomePage() {
             <div>
               <p className="text-[11px] font-bold tracking-wider uppercase text-[#aaa] mb-4">Services</p>
               <ul className="space-y-2.5">
-                {["Queue Management","Appointments","Waiting Room","Medical Records"].map(l => (
-                  <li key={l}><span className="text-[14px] text-[#666] hover:text-primary transition-colors cursor-pointer">{l}</span></li>
+                {[
+                  { href: "/join-queue",           label: "Queue Management" },
+                  { href: "/book-appointment",     label: "Appointments" },
+                  { href: "/digital-waiting-room", label: "Waiting Room" },
+                  { href: "/medical-records",      label: "Medical Records" },
+                ].map(({ href, label }) => (
+                  <li key={label}>
+                    <Link href={href} className="text-[14px] text-[#666] hover:text-primary transition-colors no-underline">{label}</Link>
+                  </li>
                 ))}
               </ul>
             </div>

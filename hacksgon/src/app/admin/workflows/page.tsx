@@ -172,7 +172,7 @@ export default function WorkflowsPage() {
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 sm:p-6 space-y-6">
       {/* Create Workflow Dialog */}
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
         <DialogContent className="max-w-sm">
@@ -227,7 +227,7 @@ export default function WorkflowsPage() {
       </Dialog>
 
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-foreground tracking-tight">AI Workflows</h1>
           <p className="text-sm text-muted-foreground mt-0.5">Automate patient interactions using ElevenLabs AI calling</p>
@@ -235,7 +235,7 @@ export default function WorkflowsPage() {
         <Button
           onClick={() => { setCreateForDoctor("__none__"); setShowCreateDialog(true); }}
           disabled={creating}
-          className="bg-primary hover:bg-[#0097a7] text-white shadow-sm gap-2"
+          className="bg-primary hover:bg-[#0097a7] text-white shadow-sm gap-2 w-full sm:w-auto"
         >
           <Plus size={16} />
           New Workflow
@@ -243,7 +243,7 @@ export default function WorkflowsPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {[
           { label: "Total Workflows", value: stats.total, icon: GitBranch, color: "text-primary", bg: "bg-primary/10" },
           { label: "Active", value: stats.active, icon: Play, color: "text-[#16A34A]", bg: "bg-[#DCFCE7]" },
@@ -264,7 +264,7 @@ export default function WorkflowsPage() {
       </div>
 
       {/* Search */}
-      <div className="relative max-w-sm">
+      <div className="relative w-full sm:max-w-sm">
         <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
         <Input
           value={search}
@@ -328,7 +328,7 @@ export default function WorkflowsPage() {
                 >
                   <Card className="border-border shadow-sm hover:shadow-md hover:border-[#00bcd4]/30 transition-all group">
                     <CardContent className="p-5">
-                      <div className="flex items-start gap-4">
+                      <div className="flex flex-col sm:flex-row items-start gap-4">
                         {/* Icon */}
                         <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${trigger.bg}`}>
                           <TriggerIcon size={18} className={trigger.color} />
@@ -352,26 +352,28 @@ export default function WorkflowsPage() {
                           </div>
                           <p className="text-xs text-muted-foreground mb-2 line-clamp-1">{wf.description || "No description"}</p>
                           <div className="flex items-center gap-3 text-[11px] text-muted-foreground flex-wrap">
-                            <span className={`flex items-center gap-1 font-semibold ${trigger.color}`}>
+                            <div className={`flex items-center gap-1 font-semibold ${trigger.color}`}>
                               <TriggerIcon size={11} />
                               {trigger.label}
-                            </span>
-                            <span>·</span>
-                            <span className="flex items-center gap-1">
-                              <Activity size={11} />
-                              {wf.execution_count || 0} runs
-                            </span>
-                            {wf.last_run_at && (
-                              <>
-                                <span>·</span>
-                                <span className="flex items-center gap-1">
-                                  <Clock size={11} />
-                                  Last: {new Date(wf.last_run_at).toLocaleDateString()}
-                                </span>
-                              </>
-                            )}
-                            <span>·</span>
-                            <span>{wf.nodes?.length || 0} nodes</span>
+                            </div>
+                            <div className="flex items-center gap-3 flex-wrap">
+                              <span>·</span>
+                              <span className="flex items-center gap-1">
+                                <Activity size={11} />
+                                {wf.execution_count || 0} runs
+                              </span>
+                              {wf.last_run_at && (
+                                <>
+                                  <span>·</span>
+                                  <span className="flex items-center gap-1">
+                                    <Clock size={11} />
+                                    Last: {new Date(wf.last_run_at).toLocaleDateString()}
+                                  </span>
+                                </>
+                              )}
+                              <span>·</span>
+                              <span>{wf.nodes?.length || 0} nodes</span>
+                            </div>
                           </div>
                           {wf.doctor_id && doctorNames[wf.doctor_id] && (
                             <div className="flex items-center gap-1.5 mt-1.5">
@@ -384,7 +386,7 @@ export default function WorkflowsPage() {
                         </div>
 
                         {/* Actions */}
-                        <div className="flex items-center gap-2 shrink-0">
+                        <div className="flex items-center gap-2 shrink-0 self-end sm:self-start ml-auto">
                           <Button
                             asChild
                             variant="outline"

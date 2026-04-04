@@ -7,9 +7,9 @@ export async function GET() {
 
     const { data, error } = await supabase
       .from('doctors')
-      .select('id, name, specialization, qualification, experience, rating, department_id, departments(name), hospitals(name)')
+      .select('id, name, specialization, qualification, experience, department_id, departments(name), hospitals(name)')
       .eq('is_on_leave', false)
-      .order('rating', { ascending: false })
+
       .limit(6);
 
     if (error) throw error;

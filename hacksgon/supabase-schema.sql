@@ -60,8 +60,6 @@ CREATE TABLE doctors (
   specialization TEXT NOT NULL,
   qualification TEXT NOT NULL,
   experience INTEGER NOT NULL,
-  rating DECIMAL(3,2) DEFAULT 0,
-  total_ratings INTEGER DEFAULT 0,
   availability JSONB,
   is_on_leave BOOLEAN DEFAULT FALSE,
   leave_from TIMESTAMPTZ,
@@ -127,18 +125,7 @@ CREATE TABLE emergency_queue (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Ratings table
-CREATE TABLE ratings (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  patient_id TEXT REFERENCES users(id) ON DELETE CASCADE,
-  doctor_id UUID REFERENCES doctors(id) ON DELETE CASCADE,
-  hospital_id UUID REFERENCES hospitals(id) ON DELETE CASCADE,
-  appointment_id UUID REFERENCES appointments(id) ON DELETE CASCADE,
-  rating INTEGER CHECK (rating >= 1 AND rating <= 5) NOT NULL,
-  feedback TEXT,
-  treatment_success BOOLEAN,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
+
 
 -- Historical Data table
 CREATE TABLE historical_data (
@@ -176,7 +163,7 @@ CREATE INDEX idx_queue_hospital_department ON queue(hospital_id, department_id);
 CREATE INDEX idx_queue_status ON queue(status);
 CREATE INDEX idx_queue_created_at ON queue(created_at);
 CREATE INDEX idx_emergency_queue_hospital ON emergency_queue(hospital_id);
-CREATE INDEX idx_ratings_doctor_id ON ratings(doctor_id);
+
 CREATE INDEX idx_historical_data_hospital_dept ON historical_data(hospital_id, department_id, date);
 CREATE INDEX idx_notifications_user_id ON notifications(user_id);
 

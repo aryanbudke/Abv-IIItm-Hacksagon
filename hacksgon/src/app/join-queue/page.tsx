@@ -5,7 +5,7 @@ import Image from "next/image";
 import { Logo } from "@/components/Logo";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
-import { ArrowLeft, Hospital, Activity, User as UserIcon, Calendar, Mail, ArrowRight, CheckCircle, HeartPulse, Loader2 } from "lucide-react";
+import { ArrowLeft, Hospital, Activity, User as UserIcon, Calendar, Mail, ArrowRight, CheckCircle, HeartPulse, Loader2, FileText, Clock, Stethoscope } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabase/client";
@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { Textarea } from "@/components/ui/textarea";
 
 export default function JoinQueuePage() {
   const router = useRouter();
@@ -34,7 +35,7 @@ export default function JoinQueuePage() {
   const [departments, setDepartments] = useState<any[]>([]);
   const [doctors, setDoctors] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({ name: "", age: "", dob: "", email: "" });
+  const [formData, setFormData] = useState({ name: "", age: "", dob: "", email: "", chiefComplaint: "" });
   const [showMedicalModal, setShowMedicalModal] = useState(false);
   const pendingFormRef = useRef<typeof formData | null>(null);
 
@@ -46,6 +47,7 @@ export default function JoinQueuePage() {
         age: "",
         dob: "",
         email: user.primaryEmailAddress?.emailAddress || "",
+        chiefComplaint: "",
       });
     }
   }, [isLoaded, isSignedIn, user, router]);
@@ -81,7 +83,7 @@ export default function JoinQueuePage() {
 
   const fetchDoctors = async (hospitalId: string, departmentId: string) => {
     try {
-      const { data, error } = await supabase.from("doctors").select("*").eq("hospital_id", hospitalId).eq("department_id", departmentId).eq("is_on_leave", false).order("rating", { ascending: false });
+      const { data, error } = await supabase.from("doctors").select("*").eq("hospital_id", hospitalId).eq("department_id", departmentId).eq("is_on_leave", false);
       if (error) throw error;
       setDoctors(data || []);
     } catch (error) { console.error("Error fetching doctors:", error); }
@@ -134,6 +136,7 @@ export default function JoinQueuePage() {
         patientId: user.id, patientName: formData.name, hospitalId: selectedHospital,
         departmentId: selectedDepartment, doctorId: doctorId || "", date: new Date(), time: new Date(),
         treatmentType: "General Consultation", isEmergency: false, status: "waiting",
+        chiefComplaint: formData.chiefComplaint || undefined,
       });
 
       if (medicalRecordId) await supabase.from("queue").update({ medical_record_id: medicalRecordId }).eq("id", queueEntry.id);
@@ -141,6 +144,7 @@ export default function JoinQueuePage() {
       await notificationService.notifyPatientAdded(formData.name, hospitalData?.name || "Unknown", departmentData?.name || "Unknown", queueEntry.tokenNumber);
 
       toast.success(`Queue joined! Your token number is ${queueEntry.tokenNumber}.`);
+      router.push(`/my-token/${queueEntry.id}`);
     } catch (error: any) {
       toast.error(error?.message || "Failed to join queue. Please try again.");
     } finally { setLoading(false); }
@@ -235,6 +239,42 @@ export default function JoinQueuePage() {
                   </Select>
                 </div>
 
+                {/* Doctor Info Preview Card */}
+                {selectedDoctor && selectedDoctor !== "any" && (() => {
+                  const doc = doctors.find(d => d.id === selectedDoctor);
+                  if (!doc) return null;
+                  return (
+                    <motion.div
+                      initial={{ opacity: 0, y: -8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -8 }}
+                      className="rounded-xl border border-border bg-muted/40 p-4 flex items-start gap-4"
+                    >
+                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                        <Stethoscope size={18} className="text-primary" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-foreground text-sm truncate">{doc.name}</p>
+                        {doc.specialization && (
+                          <p className="text-xs text-muted-foreground truncate">{doc.specialization}</p>
+                        )}
+                        <div className="flex flex-wrap gap-3 mt-2">
+
+                          {doc.average_treatment_time && (
+                            <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                              <Clock size={11} />
+                              ~{doc.average_treatment_time} min / patient
+                            </span>
+                          )}
+                          {doc.experience && (
+                            <span className="text-xs text-muted-foreground">{doc.experience} yrs exp.</span>
+                          )}
+                        </div>
+                      </div>
+                    </motion.div>
+                  );
+                })()}
+
                 <Separator />
 
                 {/* Patient Information */}
@@ -307,6 +347,26 @@ export default function JoinQueuePage() {
                       />
                     </div>
                   </div>
+                </div>
+
+                {/* Chief Complaint / Symptoms */}
+                <div className="space-y-1.5">
+                  <Label htmlFor="q-complaint" className="flex items-center gap-1.5">
+                    <FileText size={13} className="text-muted-foreground" />
+                    Chief Complaint
+                    <span className="text-muted-foreground text-xs font-normal">(Optional)</span>
+                  </Label>
+                  <Textarea
+                    id="q-complaint"
+                    value={formData.chiefComplaint}
+                    onChange={e => setFormData({ ...formData, chiefComplaint: e.target.value })}
+                    placeholder="Briefly describe your symptoms or reason for visit…"
+                    className="min-h-[80px]"
+                    maxLength={500}
+                  />
+                  {formData.chiefComplaint && (
+                    <p className="text-xs text-muted-foreground text-right">{formData.chiefComplaint.length}/500</p>
+                  )}
                 </div>
 
                 {/* Info banners */}

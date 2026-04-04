@@ -13,10 +13,10 @@ export async function GET(request: Request) {
 
     const { data, error } = await supabase
       .from('doctors')
-      .select('id, name, specialization, rating, total_ratings, average_treatment_time, is_on_leave, department_id, hospital_id')
+      .select('id, name, specialization, average_treatment_time, is_on_leave, department_id, hospital_id')
       .eq('department_id', departmentId)
       .eq('is_on_leave', false)
-      .order('rating', { ascending: false });
+
 
     if (error) {
       console.error('Error fetching doctors:', error);

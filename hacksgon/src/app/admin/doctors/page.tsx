@@ -50,7 +50,6 @@ interface Doctor {
   specialization: string;
   qualification: string;
   experience: number;
-  rating: number;
   is_on_leave: boolean;
   average_treatment_time: number;
   created_at: string;

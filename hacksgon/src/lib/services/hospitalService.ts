@@ -54,8 +54,7 @@ export class HospitalService {
       .from('doctors')
       .select('*')
       .eq('department_id', departmentId)
-      .eq('is_on_leave', false)
-      .order('rating', { ascending: false });
+      .eq('is_on_leave', false);
 
     if (error) throw error;
     return (data || []).map(item => ({
@@ -65,7 +64,7 @@ export class HospitalService {
       isOnLeave: item.is_on_leave,
       leaveFrom: item.leave_from ? new Date(item.leave_from) : undefined,
       leaveTo: item.leave_to ? new Date(item.leave_to) : undefined,
-      totalRatings: item.total_ratings,
+
       averageTreatmentTime: item.average_treatment_time,
       createdAt: new Date(item.created_at),
       updatedAt: new Date(item.updated_at)
@@ -89,7 +88,7 @@ export class HospitalService {
       isOnLeave: data.is_on_leave,
       leaveFrom: data.leave_from ? new Date(data.leave_from) : undefined,
       leaveTo: data.leave_to ? new Date(data.leave_to) : undefined,
-      totalRatings: data.total_ratings,
+
       averageTreatmentTime: data.average_treatment_time,
       createdAt: new Date(data.created_at),
       updatedAt: new Date(data.updated_at)
@@ -115,7 +114,7 @@ export class HospitalService {
       isOnLeave: item.is_on_leave,
       leaveFrom: item.leave_from ? new Date(item.leave_from) : undefined,
       leaveTo: item.leave_to ? new Date(item.leave_to) : undefined,
-      totalRatings: item.total_ratings,
+
       averageTreatmentTime: item.average_treatment_time,
       createdAt: new Date(item.created_at),
       updatedAt: new Date(item.updated_at)

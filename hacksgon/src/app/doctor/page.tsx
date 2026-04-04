@@ -36,6 +36,7 @@ import {
   SheetContent,
   SheetHeader,
   SheetTitle,
+  SheetDescription,
   SheetTrigger,
 } from "@/components/ui/sheet";
 
@@ -720,6 +721,10 @@ export default function DoctorDashboardPage() {
                 </Button>
               </SheetTrigger>
               <SheetContent side="left" className="w-[280px] p-0 flex flex-col">
+                <div className="sr-only">
+                  <SheetTitle>Navigation Menu</SheetTitle>
+                  <SheetDescription>Doctor Dashboard navigation and settings</SheetDescription>
+                </div>
                 <div className="p-6 border-b border-border bg-muted/30">
                    <Logo height={30} />
                    <p className="text-[10px] uppercase font-black text-muted-foreground/40 mt-1">Doctor Portal Nav</p>

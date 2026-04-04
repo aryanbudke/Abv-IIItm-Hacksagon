@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   Users, Calendar, Activity, ArrowRight, Zap, CheckCircle,
-  XCircle, RefreshCw, Search, Clock, HeartPulse, ShieldAlert, Phone, X,
+  XCircle, RefreshCw, Search, Clock, HeartPulse, ShieldAlert, Phone, X, Ticket,
 } from "lucide-react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase/client";
@@ -120,6 +120,7 @@ export default function DashboardPage() {
   const router = useRouter();
 
   const [stats, setStats] = useState({ activeQueues: 0, upcomingAppointments: 0, completedVisits: 0 });
+  const [activeTokenId, setActiveTokenId] = useState<string | null>(null);
   const [activity, setActivity] = useState<ActivityItem[]>([]);
   const [appointments, setAppointments] = useState<AppointmentItem[]>([]);
   const [activeCall, setActiveCall] = useState<any>(null);
@@ -201,6 +202,9 @@ export default function DashboardPage() {
       ]);
       const queueData = queueRes.data || [];
       const apptData = apptRes.data || [];
+
+      const activeEntry = queueData.find(q => q.status === "waiting" || q.status === "in-treatment");
+      setActiveTokenId(activeEntry?.id ?? null);
 
       setStats({
         activeQueues: queueData.filter(q => q.status === "waiting" || q.status === "in-treatment").length,
@@ -389,6 +393,13 @@ export default function DashboardPage() {
                 <Link href={link.href}>{link.label}</Link>
               </Button>
             ))}
+            {activeTokenId && (
+              <Button variant="default" size="sm" asChild className="gap-1.5 ml-1">
+                <Link href={`/my-token/${activeTokenId}`}>
+                  <Ticket size={13} /> My Token
+                </Link>
+              </Button>
+            )}
           </nav>
           <AppUserButton />
         </div>

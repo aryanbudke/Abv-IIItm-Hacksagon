@@ -63,7 +63,7 @@ async function seed() {
       for (const docName of doctorNames) {
         await supabase.from('doctors').insert({
           id: randId(),
-          hospital_id: hId, department_id: dId, name: `Dr. ${docName}`, email: `${docName.toLowerCase()}@${h.name.replace(/\\s+/g,'').toLowerCase()}.com`, phone: "1234567890", specialization: d.name, qualification: 'MBBS, MD', experience: 5, rating: 0, total_ratings: 0
+          hospital_id: hId, department_id: dId, name: `Dr. ${docName}`, email: `${docName.toLowerCase()}@${h.name.replace(/\\s+/g,'').toLowerCase()}.com`, phone: "1234567890", specialization: d.name, qualification: 'MBBS, MD', experience: 5
         });
       }
     }

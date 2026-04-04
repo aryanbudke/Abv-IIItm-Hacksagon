@@ -52,6 +52,7 @@ export class QueueService {
         time: data.time.toISOString(),
         treatment_type: data.treatmentType,
         is_emergency: data.isEmergency,
+        chief_complaint: data.chiefComplaint || null,
         // face_embedding: data.faceEmbedding, // MVP: Face verification disabled
         qr_code: qrCode,
         status: 'waiting',
@@ -75,6 +76,7 @@ export class QueueService {
       time: data.time,
       treatmentType: data.treatmentType,
       isEmergency: data.isEmergency,
+      chiefComplaint: data.chiefComplaint,
       // faceEmbedding: data.faceEmbedding, // MVP: Face verification disabled
       qrCode,
       status: 'waiting',
