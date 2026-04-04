@@ -1,12 +1,14 @@
 # ElevenLabs Setup Guide — MediQueue Appointment Booking
 
-Complete step-by-step guide to configure a new ElevenLabs account for AI phone call appointment booking.
+Complete step-by-step guide to configure ElevenLabs for AI phone call appointment booking.
+
+> **How it works (important to understand):** The server code sends the full system prompt and first message to ElevenLabs via `conversation_config_override` on every call. This means the **real doctor names and hospital data are baked into the prompt at call time** — nothing is guessed or hallucinated. The ElevenLabs dashboard holds only placeholder/fallback values.
 
 ---
 
 ## Step 1 — Create a Conversational AI Agent
 
-1. Go to [elevenlabs.io](https://elevenlabs.io) and log in to your new account
+1. Go to [elevenlabs.io](https://elevenlabs.io) and log in
 2. In the left sidebar, click **Agents**
 3. Click **+ Create agent**
 4. Choose **Blank template**
@@ -15,87 +17,54 @@ Complete step-by-step guide to configure a new ElevenLabs account for AI phone c
 
 ---
 
-## Step 2 — Agent Tab: System Prompt
+## Step 2 — Agent Tab: System Prompt (Placeholder)
 
-1. Click the **Agent** tab at the top
+> The real system prompt is injected by the server code. This is just a fallback so the agent has something if the override fails.
+
+1. Click the **Agent** tab
 2. Find the **System Prompt** field
-3. Delete any default text and paste **exactly** this:
+3. Paste this placeholder:
 
 ```
-You are a medical appointment booking assistant for MediQueue. You are calling {{patient_name}}.
-
-CRITICAL RULES:
-- You already know the patient's name: {{patient_name}}. NEVER ask for their name.
-- You ARE able to book appointments. That is your ONLY job.
-- NEVER say you cannot book appointments or that you are a generic AI.
-- After the patient says YES to confirm, say goodbye and END THE CALL immediately.
-- Keep ALL responses SHORT. This is a phone call, not a chat.
-- Speak naturally and clearly.
-
-BOOKING FLOW — follow these steps in order:
-
-STEP 1 — REASON FOR VISIT:
-Ask: "What is the reason for your visit today?"
-Listen and remember the answer. This is the appointment_reason.
-
-STEP 2 — HOSPITAL SELECTION:
-Say: "To choose your hospital, please press a number on your keypad. {{hospital_options}}."
-Wait for the patient to press a number. Acknowledge their choice.
-Record the digit they pressed as selected_hospital (e.g. "1", "2", "3").
-
-STEP 3 — DOCTOR SELECTION:
-After the patient selects a hospital, look up the doctors for that hospital from {{hospital_doctors}}.
-Say: "Now please select your doctor. For Hospital [their number]: [list the doctors for that hospital only]."
-Wait for the patient to press a number. Acknowledge their choice.
-Record the digit they pressed as selected_doctor (e.g. "1", "2", "3").
-
-Example: If patient pressed "1" for Hospital 1, say the doctor options listed under "Hospital 1 (name): press 1 for Dr. X, press 2 for Dr. Y" from {{hospital_doctors}}.
-
-STEP 4 — DATE AND TIME:
-Say: "What date and time works for you? We have slots available: {{available_slots}}."
-If they say a day name like "Thursday", confirm: "This coming Thursday?"
-If they say "3 PM", confirm: "3 in the afternoon, correct?"
-Record as confirmed_date and confirmed_time.
-
-STEP 5 — CONFIRM ALL DETAILS:
-Read back everything: "Let me confirm: [their reason] with [doctor name] at [hospital name] on [date] at [time]. Is that correct?"
-
-If they say YES:
-  Say exactly: "Perfect! Your appointment is confirmed and a confirmation email will be sent to you shortly. Thank you {{patient_name}}, have a great day! Goodbye!"
-  END THE CALL immediately. Do not say anything else.
-
-If they say NO or want to change something:
-  Go back to the relevant step.
-
-HANDLING EDGE CASES:
-- If no response for 5 seconds: say "Hello, can you hear me?" Once more, then end call.
-- If they decline: "No problem, feel free to book online. Goodbye!"
-- If they ask a medical question: "I can only help with scheduling — please discuss that with your doctor."
-
-DATA TO RECORD — collect ALL fields before ending:
-- appointment_reason: what the patient said (string)
-- selected_hospital: the keypad digit pressed e.g. "1", "2" (string)
-- selected_doctor: the keypad digit pressed for doctor e.g. "1", "2" (string)
-- confirmed_date: chosen date e.g. "2026-04-10" (string)
-- confirmed_time: chosen time e.g. "10:00 AM" (string)
-- patient_confirmed: true if patient said yes, false otherwise (boolean)
-- call_outcome: "confirmed", "declined", or "no_answer" (string)
+You are a medical appointment booking assistant for MediQueue. You are calling a patient to help them book an appointment. Follow the booking flow: ask reason for visit, select hospital via keypad, select doctor via keypad, confirm date and time, then confirm the booking and say goodbye.
 ```
 
 ---
 
-## Step 3 — Agent Tab: First Message
+## Step 3 — Agent Tab: First Message (Placeholder)
+
+> The real first message is also injected by the server code with the patient's actual name.
 
 1. Still on the **Agent** tab, find the **First message** field
-2. Paste this:
+2. Paste this placeholder:
 
 ```
-Hi {{patient_name}}, this is MediQueue calling. I'm here to help you book a medical appointment. Is now a good time?
+Hi, this is MediQueue calling. I'm here to help you book a medical appointment. Is now a good time?
 ```
 
 ---
 
-## Step 4 — Agent Tab: Voice
+## Step 4 — Agent Tab: Dynamic Variables
+
+The server code overrides the system prompt and first message on every call via `conversation_config_override`, so the real patient name, hospital list, doctor list, and slots are all baked in as plain text — no variable substitution is used at runtime. The Variables panel values below are **fallback test values only** (used when you test the agent inside the ElevenLabs dashboard, not during real calls).
+
+1. Still on the **Agent** tab, scroll down to find the **Dynamic variables** section
+2. Add all of the following:
+
+| Identifier | Type | Test value (for dashboard testing only) |
+|---|---|---|
+| `patient_name` | String | `Test Patient` |
+| `hospital_options` | String | `press 1 for City Care, press 2 for Fortis, press 3 for Apollo` |
+| `hospital_doctors` | String | `Hospital 1 (City Care): press 1 for Dr. Aryan (Cardiology), press 2 for Dr. SOURAV BUDKE (Neurology)` |
+| `available_slots` | String | `09:00 AM, 10:00 AM, 11:00 AM, 02:00 PM, 03:00 PM` |
+| `facility_name` | String | *(leave blank)* |
+| `doctor_name` | String | *(leave blank)* |
+
+> **Why all 6?** Even though real calls use `conversation_config_override`, ElevenLabs requires all variables referenced anywhere in the agent config to be declared here. If a variable is missing from this panel, ElevenLabs may reject calls or leave placeholders un-substituted as a fallback. Declare all of them to be safe.
+
+---
+
+## Step 5 — Agent Tab: Voice
 
 1. Still on the **Agent** tab, find the **Voice** section
 2. Choose any clear English voice (recommended: **Rachel** or **Adam**)
@@ -103,14 +72,26 @@ Hi {{patient_name}}, this is MediQueue calling. I'm here to help you book a medi
 
 ---
 
-## Step 5 — Agent Tab: LLM
+## Step 6 — Agent Tab: LLM
 
 1. Find the **LLM** section on the Agent tab
-2. Set model to **GPT-4o** or **GPT-4o mini** (either works, 4o mini is faster)
+2. Set model to **GPT-4o** or **GPT-4o mini**
 
 ---
 
-## Step 6 — Security Tab: Enable Overrides
+## Step 7 — Advanced Tab: Enable DTMF Input
+
+DTMF allows the patient to press keypad numbers to select hospitals and doctors.
+
+1. Click the **Advanced** tab on the agent
+2. Find **Enable DTMF input** (may be labelled "Alpha")
+3. Toggle it **ON**
+
+---
+
+## Step 8 — Security Tab: Enable Overrides
+
+**This is critical.** Without this, the server code cannot inject the real system prompt and first message.
 
 1. Click the **Security** tab
 2. Under **Overrides**, toggle ON:
@@ -121,7 +102,7 @@ Hi {{patient_name}}, this is MediQueue calling. I'm here to help you book a medi
 
 ---
 
-## Step 7 — Analysis Tab: Data Collection (DCR Fields)
+## Step 9 — Analysis Tab: Data Collection (DCR Fields)
 
 These fields capture what the patient says during the call so the webhook can create the appointment.
 
@@ -130,125 +111,135 @@ These fields capture what the patient says during the call so the webhook can cr
 
 | Field name | Type | Description |
 |---|---|---|
-| `appointment_reason` | String | What the patient said their symptoms or reason for visit is |
-| `selected_hospital` | String | The keypad number the patient pressed to select a hospital e.g. "1" |
-| `selected_doctor` | String | The keypad number the patient pressed to select a doctor e.g. "1" |
-| `confirmed_date` | String | The date the patient chose for their appointment e.g. "2026-04-10" |
-| `confirmed_time` | String | The time the patient chose e.g. "10:00 AM" or "3 PM" |
+| `appointment_reason` | String | What the patient said their reason for visit is |
+| `selected_hospital` | String | The keypad digit pressed to select a hospital e.g. "1" |
+| `selected_doctor` | String | The keypad digit pressed to select a doctor e.g. "1" |
+| `confirmed_date` | String | The date the patient chose e.g. "2026-04-10" |
+| `confirmed_time` | String | The time the patient chose e.g. "10:00 AM" |
 | `patient_confirmed` | Boolean | True if the patient said yes to the final confirmation |
 | `call_outcome` | String | One of: confirmed, declined, no_answer |
 
-> **Important:** The field names must be spelled exactly as shown above (lowercase, underscores). They must match what the webhook code expects.
+> **Important:** Field names must be spelled exactly as shown (lowercase, underscores).
 
 ---
 
-## Step 8 — Connect a Phone Number (Twilio)
+## Step 10 — Connect a Phone Number (Twilio)
 
-ElevenLabs uses Twilio to make outbound calls. You need a Twilio phone number connected.
-
-### 8a — Get a Twilio number (if you don't have one)
+### 10a — Get a Twilio number (if you don't have one)
 1. Go to [twilio.com](https://twilio.com) and log in
 2. Go to **Phone Numbers → Manage → Buy a number**
 3. Buy a number with **Voice** capability
 
-### 8b — Connect Twilio to ElevenLabs
+### 10b — Connect Twilio to ElevenLabs
 1. In ElevenLabs, go to **Deploy → Phone Numbers** in the left sidebar
 2. Click **+ Add phone number**
 3. Select **Twilio**
-4. Enter your **Twilio Account SID** and **Auth Token**
-   - Find these at: twilio.com → Console Dashboard
+4. Enter your **Twilio Account SID** and **Auth Token** (from twilio.com → Console Dashboard)
 5. Enter your **Twilio phone number** (e.g. `+12602503305`)
 6. Click **Connect**
-7. Copy the **Phone Number ID** that appears (you'll need it for `.env`)
+7. Copy the **Phone Number ID** that appears
 
 ---
 
-## Step 9 — Get API Keys
+## Step 11 — Set Post-Call Webhook (Workspace Settings)
+
+The post-call webhook fires when a call ends and sends the transcript + DCR fields to your server so the appointment can be created.
+
+> **Configure this at workspace level, not inside the agent.** The code also passes `post_call_webhook_url` per-call as a backup.
+
+1. Click your **profile icon** (bottom-left in ElevenLabs)
+2. Go to **Settings** (workspace settings, not agent settings)
+3. Find the **Webhooks** section
+4. Click **+ Add webhook** or **Create webhook**
+5. Set the URL to:
+   ```
+   https://hackarena.aryanbudke.in/api/patient-call/webhook
+   ```
+6. Select event type: **Post-call** (or "Conversation ended")
+7. Save
+8. If a **Webhook Secret** is shown, copy it and add to your `.env`:
+   ```env
+   ELEVENLABS_WEBHOOK_SECRET=wsec_your_secret_here
+   ```
+
+---
+
+## Step 12 — Get API Keys
 
 ### ElevenLabs API Key
-1. Click your profile icon (bottom left in ElevenLabs)
+1. Click your profile icon (bottom-left)
 2. Go to **API Keys**
-3. Click **+ Create API Key**
-4. Give it a name: `MediQueue`
-5. Copy the key — you'll only see it once
+3. Click **+ Create API Key**, name it `MediQueue`
+4. Copy the key — shown only once
 
 ### Agent ID
-1. Go to **Agents** in the sidebar
-2. Click your agent
-3. Look at the URL: `elevenlabs.io/app/agents/agents/agent_XXXXXXXX`
-4. The `agent_XXXXXXXX` part is your Agent ID
+1. Go to **Agents** in the sidebar → click your agent
+2. Look at the URL: `elevenlabs.io/app/agents/agents/agent_XXXXXXXX`
+3. Copy the `agent_XXXXXXXX` part
 
 ### Phone Number ID
-- You copied this in Step 8b above
+- Copied in Step 10b above
 
 ---
 
-## Step 10 — Update `.env` File
-
-Open `/Users/aryan/Desktop/hackarean/Hackarena/.env` and update these values:
+## Step 13 — Update `.env` File
 
 ```env
-ELEVENLABS_API_KEY=sk_your_new_api_key_here
-ELEVENLABS_AGENT_ID=agent_your_new_agent_id_here
+ELEVENLABS_API_KEY=sk_your_api_key_here
+ELEVENLABS_AGENT_ID=agent_your_agent_id_here
 ELEVENLABS_PHONE_NUMBER_ID=phnum_your_phone_number_id_here
 ```
 
 ---
 
-## Step 11 — Set Post-Call Webhook
+## Step 14 — Publish the Agent
 
-This tells ElevenLabs where to send the conversation results after each call ends.
-
-1. Go to your agent → **Analysis** tab
-2. Scroll down to find **Post-call webhook** (it may be below the data collection section)
-3. Set the URL to:
-   ```
-   https://hackarena.aryanbudke.in/api/patient-call/webhook
-   ```
-4. If you see a **Secret** field, copy the secret and add it to `.env`:
-   ```env
-   ELEVENLABS_WEBHOOK_SECRET=wsec_your_secret_here
-   ```
-
-> **Note:** If you don't see a Post-call webhook field in the Analysis tab, it may be under the **Advanced** tab or configured automatically via the API call's `post_call_webhook_url` parameter (which is already in the code).
-
----
-
-## Step 12 — Publish the Agent
-
-1. Click the **Publish** button (top right, black button)
+1. Click the **Publish** button (top-right, black button)
 2. Confirm the publish
-3. The agent status should show **Live**
+3. Status should show **Live**
 
 ---
 
-## Step 13 — Verify Everything Works
+## Step 15 — Verify Everything
 
-After publishing, check:
-
-- [ ] Agent tab has system prompt with `{{patient_name}}` etc.
-- [ ] Agent tab has first message with `{{patient_name}}`
 - [ ] Security tab: First message = ON, System prompt = ON, Text only = OFF
-- [ ] Analysis tab: all 6 data collection fields added
-- [ ] Phone number connected and showing in Deploy → Phone Numbers
-- [ ] `.env` updated with new API key, agent ID, phone number ID
+- [ ] Advanced tab: DTMF input = ON
+- [ ] Analysis tab: all 7 DCR fields added with exact names
+- [ ] Phone number connected in Deploy → Phone Numbers
+- [ ] Post-call webhook set in workspace Settings → Webhooks
+- [ ] `.env` has API key, Agent ID, Phone Number ID
 - [ ] Agent is Published (not Draft)
 
 ---
 
-## Step 14 — Test the Call
+## Step 16 — Test the Call
 
-1. Go to your app at `https://hackarena.aryanbudke.in`
-2. Navigate to Book Appointment
+1. Go to `https://hackarena.aryanbudke.in`
+2. Navigate to **Book Appointment**
 3. Click **Book via Call**
-4. Answer the call
-5. Go through the booking flow:
-   - State your reason for visit
+4. Answer the call — the agent will greet you by name
+5. Complete the booking flow:
+   - Say your reason for visit
    - Press a number to select a hospital
+   - Press a number to select a doctor (only doctors for that hospital are listed)
    - Say a date and time
-   - Confirm with "yes"
-6. After the call ends, check your dashboard — the appointment should appear
+   - Say "yes" to confirm
+6. Check your dashboard — the appointment should appear
 7. Check your email — a confirmation email should arrive
+
+---
+
+## How the System Prompt Works (Technical Detail)
+
+The server (`src/app/api/patient-call/request/route.ts`) builds a full system prompt at call time with real data embedded:
+
+```
+AVAILABLE DOCTORS:
+Hospital 1 (City Care): press 1 for Dr. Aryan (Cardiology), press 2 for Dr. SOURAV BUDKE (Neurology)
+Hospital 5 (fortis): press 1 for Dr. Manjunath (Neurology), press 2 for Dr. Srujan Hariwal (Gynecology)
+```
+
+This is sent via `conversation_config_override.agent.prompt.prompt` in the ElevenLabs API call. The LLM receives the actual names as plain text — no variable substitution, no guessing.
 
 ---
 
@@ -257,9 +248,10 @@ After publishing, check:
 | Problem | Cause | Fix |
 |---|---|---|
 | "Override for field 'first_message' is not allowed" | Security overrides not enabled | Security tab → toggle ON First message + System prompt → Publish |
-| Agent says "I can't book appointments" | Wrong/old system prompt in dashboard | Agent tab → replace system prompt with the one in Step 2 → Publish |
+| Agent shows fake doctor names (Dr. Smith etc.) | Old code deployed or Security overrides OFF | Check Vercel deployment is latest commit; check Security tab overrides are ON |
 | Agent doesn't speak at all | Text only mode is ON | Security tab → toggle OFF Text only → Publish |
-| Call connects but agent says "Hello, how can I help" | First message not set | Agent tab → set First message (Step 3) → Publish |
-| Appointment not created after call | Webhook blocked by auth | Already fixed in middleware.ts — ensure latest code is deployed |
-| Appointment not created — call shows "failed" | DCR fields not configured | Analysis tab → add all 6 data collection fields (Step 7) |
-| `patient_name` shows as empty | Dynamic variable not passed | Check code is deployed and patient has name in their profile |
+| Call connects but wrong greeting | First message override not enabled | Security tab → toggle ON First message → Publish |
+| Appointment not created after call | Webhook not configured or DCR fields missing | Add webhook in Settings → Webhooks; check all 7 DCR fields exist in Analysis tab |
+| Agent skips doctor selection | DTMF not enabled | Advanced tab → Enable DTMF input → Publish |
+| `patient_name` shows as empty | Patient has no name in Supabase profile | Ask patient to complete their profile |
+| Call fails immediately | ElevenLabs env vars missing | Check `.env` has all 3 ElevenLabs values |

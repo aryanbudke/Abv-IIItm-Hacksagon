@@ -10,7 +10,6 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabase/client";
 import { queueService } from "@/lib/services/queueService";
-import { QRCodePopup } from "@/components/QRCodePopup";
 import { EmergencyButton } from "@/components/EmergencyButton";
 import { QueueStatusWidget } from "@/components/QueueStatusWidget";
 import { notificationService } from "@/lib/services/notificationService";
@@ -36,8 +35,6 @@ export default function JoinQueuePage() {
   const [doctors, setDoctors] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({ name: "", age: "", dob: "", email: "" });
-  const [showQRPopup, setShowQRPopup] = useState(false);
-  const [qrData, setQrData] = useState<any>(null);
   const [showMedicalModal, setShowMedicalModal] = useState(false);
   const pendingFormRef = useRef<typeof formData | null>(null);
 
@@ -143,12 +140,7 @@ export default function JoinQueuePage() {
 
       await notificationService.notifyPatientAdded(formData.name, hospitalData?.name || "Unknown", departmentData?.name || "Unknown", queueEntry.tokenNumber);
 
-      setQrData({
-        qrCode: queueEntry.qrCode, tokenNumber: queueEntry.tokenNumber, patientName: formData.name,
-        hospitalName: hospitalData?.name || "Unknown", departmentName: departmentData?.name || "Unknown",
-        doctorName: doctorData?.name || "Available Doctor", estimatedWaitTime, position: queueEntry.position || 1, isEmergency: false,
-      });
-      setShowQRPopup(true);
+      toast.success(`Queue joined! Your token number is ${queueEntry.tokenNumber}.`);
     } catch (error: any) {
       toast.error(error?.message || "Failed to join queue. Please try again.");
     } finally { setLoading(false); }
@@ -360,14 +352,6 @@ export default function JoinQueuePage() {
 
       <MedicalRecordsModal isOpen={showMedicalModal} onClose={() => setShowMedicalModal(false)} onConfirm={handleMedicalModalConfirm} />
 
-      <QRCodePopup
-        isOpen={showQRPopup} onClose={() => setShowQRPopup(false)}
-        qrCode={qrData?.qrCode || ""} tokenNumber={qrData?.tokenNumber || 0}
-        patientName={qrData?.patientName || ""} hospitalName={qrData?.hospitalName || ""}
-        departmentName={qrData?.departmentName || ""} doctorName={qrData?.doctorName || ""}
-        estimatedWaitTime={qrData?.estimatedWaitTime || 0} position={qrData?.position || 1}
-        isEmergency={qrData?.isEmergency || false}
-      />
     </div>
   );
 }

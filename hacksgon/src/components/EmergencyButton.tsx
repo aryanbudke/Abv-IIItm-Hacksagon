@@ -5,7 +5,6 @@ import { createPortal } from "react-dom";
 import { useUser } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, Clock, User, Activity, X } from "lucide-react";
-import { QRCodePopup } from "./QRCodePopup";
 import { toast } from "sonner";
 
 interface EmergencyButtonProps {
@@ -18,8 +17,7 @@ export function EmergencyButton({ hospitalId, departmentId, onEmergencyCreated }
   const { user } = useUser();
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [showQR, setShowQR] = useState(false);
-  const [qrData, setQrData] = useState<any>(null);
+
 
   const handleEmergencyClick = async () => {
     setShowModal(true);
@@ -51,18 +49,6 @@ export function EmergencyButton({ hospitalId, departmentId, onEmergencyCreated }
       const emergencyDept = await response.json();
 
       if (response.ok && emergencyDept) {
-        setQrData({
-          qrCode: emergencyDept.qr_code || emergencyDept.qrCode,
-          tokenNumber: emergencyDept.token_number || emergencyDept.tokenNumber,
-          patientName: emergencyDept.patient_name || emergencyDept.patientName || 'Emergency Patient',
-          hospitalName: emergencyDept.hospitalName || 'Hospital',
-          departmentName: emergencyDept.departmentName || 'Emergency',
-          doctorName: emergencyDept.doctorName || 'Emergency Team',
-          estimatedWaitTime: 0,
-          position: 1,
-          isEmergency: true
-        });
-        setShowQR(true);
         setShowModal(false);
         onEmergencyCreated?.(emergencyDept);
         
@@ -157,20 +143,6 @@ export function EmergencyButton({ hospitalId, departmentId, onEmergencyCreated }
         document.body
       )}
 
-      {/* QR Code Popup for Emergency */}
-      <QRCodePopup
-        isOpen={showQR}
-        onClose={() => setShowQR(false)}
-        qrCode={qrData?.qrCode || ''}
-        tokenNumber={qrData?.tokenNumber || 0}
-        patientName={qrData?.patientName || ''}
-        hospitalName={qrData?.hospitalName || ''}
-        departmentName={qrData?.departmentName || ''}
-        doctorName={qrData?.doctorName || ''}
-        estimatedWaitTime={qrData?.estimatedWaitTime || 0}
-        position={qrData?.position || 1}
-        isEmergency={true}
-      />
     </>
   );
 }
