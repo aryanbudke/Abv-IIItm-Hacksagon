@@ -13,6 +13,7 @@ interface CreateWorkflowAppointmentParams {
   workflowName?: string;
   executionId?: string;
   source: 'workflow_node' | 'call_confirmation';
+  appointmentReason?: string;
 }
 
 interface WorkflowAppointmentResult {
@@ -31,7 +32,7 @@ export async function createWorkflowAppointment(
 
   const { data: patient, error: patientError } = await supabase
     .from('users')
-    .select('id,name,email')
+    .select('id,name,email,mobile')
     .eq('id', params.patientId)
     .single();
 
@@ -143,6 +144,7 @@ export async function createWorkflowAppointment(
       date: params.date,
       timeSlot: params.timeSlot,
       appointmentId: appointment?.id || '',
+      appointmentReason: params.appointmentReason,
     });
   }
 

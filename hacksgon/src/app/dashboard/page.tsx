@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   Users, Calendar, Activity, ArrowRight, Zap, CheckCircle,
-  XCircle, RefreshCw, Search, Clock, HeartPulse, ShieldAlert, Phone,
+  XCircle, RefreshCw, Search, Clock, HeartPulse, ShieldAlert, Phone, X,
 } from "lucide-react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase/client";
@@ -161,7 +161,12 @@ export default function DashboardPage() {
       fetchProfileCompleteness();
       const qSub = supabase.channel("dashboard-queue").on("postgres_changes", { event: "*", schema: "public", table: "queue" }, () => fetchAll()).subscribe();
       const aSub = supabase.channel("dashboard-appt").on("postgres_changes", { event: "*", schema: "public", table: "appointments" }, () => fetchAll()).subscribe();
-      return () => { qSub.unsubscribe(); aSub.unsubscribe(); };
+      const cSub = supabase.channel("dashboard-call").on("postgres_changes", { event: "*", schema: "public", table: "patient_call_requests" }, () => fetchAll()).subscribe();
+      return () => { 
+        qSub.unsubscribe(); 
+        aSub.unsubscribe();
+        cSub.unsubscribe();
+      };
     }
   }, [isLoaded, isSignedIn, user]);
 
@@ -215,12 +220,14 @@ export default function DashboardPage() {
       }));
       setAppointments(appointments);
 
-      // Fetch active call requests
+      // Fetch active call requests (ignore ones older than 10 mins as failure fallback)
+      const tenMinsAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
       const { data: callRequests } = await supabase
         .from('patient_call_requests')
         .select('*')
         .eq('patient_id', user.id)
         .in('status', ['pending', 'calling'])
+        .gt('created_at', tenMinsAgo)
         .order('created_at', { ascending: false });
 
       setActiveCall((callRequests || []).length > 0 ? callRequests![0] : null);
@@ -278,6 +285,22 @@ export default function DashboardPage() {
       setActivity(actItems.slice(0, 15));
     } catch (err) { console.error("Error fetching dashboard data:", err); }
     finally { setLoading(false); }
+  };
+
+  const dismissCall = async (callId: string) => {
+    if (!user) return;
+    try {
+      await supabase
+        .from('patient_call_requests')
+        .update({ status: 'cancelled', notes: 'Manually dismissed from dashboard.' })
+        .eq('id', callId);
+      
+      setActiveCall(null);
+      toast.success("Call status cleared.");
+      fetchAll();
+    } catch (err) {
+      toast.error("Failed to clear call status.");
+    }
   };
 
   const cancelAppointment = async (appointmentId: string) => {
@@ -419,7 +442,7 @@ export default function DashboardPage() {
         {/* Active Call Status */}
         {activeCall && (
           <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={1}>
-            <div className="p-4 rounded-2xl border-2 border-primary/20 bg-primary/5 flex items-center justify-between">
+            <div className="p-4 rounded-2xl border-2 border-primary/20 bg-primary/5 flex items-center justify-between group relative overflow-hidden">
               <div className="flex items-center gap-3">
                 <div className="relative">
                   <div className="absolute inset-0 bg-primary/20 rounded-full animate-ping" />
@@ -429,10 +452,23 @@ export default function DashboardPage() {
                 </div>
                 <div>
                   <p className="font-bold text-sm">AI Booking Call in Progress</p>
-                  <p className="text-xs text-muted-foreground">Our assistant is on the line with you...</p>
+                  <p className="text-xs text-muted-foreground truncate max-w-[200px] sm:max-w-none">
+                    Our assistant is on the line with you...
+                  </p>
                 </div>
               </div>
-              <Badge variant="secondary" className="animate-pulse">Active</Badge>
+              <div className="flex items-center gap-2">
+                <Badge variant="secondary" className="animate-pulse hidden sm:inline-flex">Active</Badge>
+                <Button 
+                  size="icon" 
+                  variant="ghost" 
+                  className="h-8 w-8 rounded-full hover:bg-primary/10 text-primary"
+                  onClick={() => dismissCall(activeCall.id)}
+                  title="Dismiss if call has ended"
+                >
+                  <X size={16} />
+                </Button>
+              </div>
             </div>
           </motion.div>
         )}

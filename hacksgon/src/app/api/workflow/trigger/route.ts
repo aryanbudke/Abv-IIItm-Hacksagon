@@ -1,5 +1,6 @@
 import { createServerClient } from '@/lib/supabase/server';
 import { executeWorkflow } from '@/lib/workflow/engine';
+import { pollCallResult } from '@/lib/services/elevenLabsService';
 import { NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -58,20 +59,27 @@ export async function POST(req: Request) {
 
     // 5. Update Execution Record
     const { error: updError } = await supabase.from('workflow_executions').update({
-      status: result.status.toUpperCase(),
-      logs: result.steps,
-      completed_at: new Date().toISOString(),
+      status: result.callInitiated ? 'running' : result.status.toUpperCase(),
+      execution_log: result.steps,
+      completed_at: result.callInitiated ? null : new Date().toISOString(),
     }).eq('id', executionId);
 
     if (updError) {
       console.error('Execution record update error:', updError);
     }
 
-    return NextResponse.json({ 
-      success: true, 
-      executionId, 
+    // 6. If a call was initiated, start background poller to detect confirmation and book appointment
+    if (result.callInitiated) {
+      pollCallResult(executionId).catch(err =>
+        console.error('[Trigger] Background poller error:', err)
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      executionId,
       status: result.status,
-      callInitiated: result.callInitiated 
+      callInitiated: result.callInitiated
     });
 
   } catch (error: any) {

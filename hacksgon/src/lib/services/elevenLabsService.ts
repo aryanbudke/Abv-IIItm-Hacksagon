@@ -16,6 +16,8 @@ export interface CallParams {
   facilityPhoneNumber?: string;
   callReason?: string;
   availableSlots?: string;
+  /** DTMF hospital menu, e.g. "press 1 for City Hospital, press 2 for Apollo" */
+  hospitalOptions?: string;
   extraContext?: Record<string, string>;
 }
 
@@ -88,9 +90,10 @@ export async function initiateOutboundCall(params: CallParams): Promise<{ conver
     facility_name: params.facilityName || 'our medical centre',
     facility_address: params.facilityAddress || '',
     facility_phone_number: params.facilityPhoneNumber || '',
-    call_reason: params.callReason || 'a follow-up regarding your health',
-    reason: params.callReason || 'a follow-up',
+    call_reason: params.callReason || '',
+    reason: params.callReason || '',
     available_slots: params.availableSlots || 'Monday at 10:00 AM, Wednesday at 2:00 PM, Friday at 9:00 AM',
+    hospital_options: params.hospitalOptions || '',
     ...(params.extraContext || {}),
   };
 
@@ -280,6 +283,15 @@ export async function syncExecutionCallStatus(executionId: string): Promise<{
   let confirmedDate = resolveDate(extractDCRValue(dcr.confirmed_date));
   let confirmedTime = resolveTime(extractDCRValue(dcr.confirmed_time));
   let patientConfirmed = ['true','yes','1'].includes(extractDCRValue(dcr.patient_confirmed).toLowerCase());
+  const appointmentReason = extractDCRValue(dcr.appointment_reason);
+  const selectedHospitalKey = extractDCRValue(dcr.selected_hospital);
+
+  // Resolve DTMF hospital selection using hospital_map stored in execution log
+  const hospitalMapStr = log.find(s => s.hospital_map)?.hospital_map as string | undefined;
+  const hospitalMap: Record<string, string> = hospitalMapStr ? JSON.parse(String(hospitalMapStr)) : {};
+  const selectedHospitalId = selectedHospitalKey && hospitalMap[selectedHospitalKey]
+    ? hospitalMap[selectedHospitalKey]
+    : undefined;
 
   if (!patientConfirmed && summary) {
     patientConfirmed = ['confirmed','chose','selected','booked','scheduled','agreed'].some(p => summary.toLowerCase().includes(p));
@@ -295,13 +307,16 @@ export async function syncExecutionCallStatus(executionId: string): Promise<{
     node_type: 'poll_result',
     label: 'ElevenLabs Call Completed',
     status: 'ok',
-    message: `Outcome: ${callOutcome}. Patient confirmed: ${patientConfirmed}.`,
+    message: `Outcome: ${callOutcome}. Patient confirmed: ${patientConfirmed}.${appointmentReason ? ` Reason: ${appointmentReason}.` : ''}`,
     timestamp: new Date().toISOString(),
     conversation_id: conversationId,
     call_outcome: callOutcome,
     patient_confirmed: patientConfirmed,
     confirmed_date: confirmedDate,
     confirmed_time: confirmedTime,
+    appointment_reason: appointmentReason || null,
+    selected_hospital_key: selectedHospitalKey || null,
+    selected_hospital_id: selectedHospitalId || null,
     transcript_preview: transcript.slice(0, 300),
   });
 
@@ -318,7 +333,10 @@ export async function syncExecutionCallStatus(executionId: string): Promise<{
   });
 
   if (patientConfirmed && confirmedDate) {
-    await createAppointmentFromCall(exec, confirmedDate, confirmedTime, callOutcome, log, executionId, supabase);
+    await createAppointmentFromCall(exec, confirmedDate, confirmedTime, callOutcome, log, executionId, supabase, {
+      appointmentReason,
+      selectedHospitalId,
+    });
   }
 
   return { updated: true, terminal: true, status: normalizedStatus };
@@ -328,26 +346,31 @@ async function createAppointmentFromCall(
   exec: Record<string, unknown>,
   confirmedDate: string,
   confirmedTime: string,
-  callOutcome: string,
+  _callOutcome: string,
   log: Record<string, unknown>[],
   executionId: string,
-  supabase: ReturnType<typeof createServerClient>
+  supabase: ReturnType<typeof createServerClient>,
+  extras?: { appointmentReason?: string; selectedHospitalId?: string }
 ) {
   try {
     const { data: workflow } = await supabase
       .from('workflows').select('hospital_id,doctor_id').eq('id', exec.workflow_id).single();
     if (!workflow) throw new Error('Could not fetch workflow');
 
+    // Use DTMF-selected hospital if available, otherwise fall back to workflow's hospital
+    const resolvedHospitalId = extras?.selectedHospitalId || workflow.hospital_id || null;
+
     const booking = await createWorkflowAppointment({
       supabase,
       patientId: exec.patient_id as string,
       doctorId: workflow.doctor_id || null,
-      hospitalId: workflow.hospital_id || null,
+      hospitalId: resolvedHospitalId,
       date: confirmedDate,
       timeSlot: confirmedTime,
       workflowName: String(exec.workflow_name || ''),
       executionId,
       source: 'call_confirmation',
+      appointmentReason: extras?.appointmentReason,
     });
 
     log.push({

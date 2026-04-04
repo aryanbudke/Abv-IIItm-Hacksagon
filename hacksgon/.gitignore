@@ -10,7 +10,6 @@ coverage
 dist/
 .next/
 out/
-*.tsbuildinfo
 
 # Misc
 .DS_Store

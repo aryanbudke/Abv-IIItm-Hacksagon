@@ -893,26 +893,44 @@ export default function BookAppointmentPage() {
                 </p>
               </motion.div>
 
-              <div className="flex flex-col sm:flex-row gap-3 pt-6">
-                <Link href="/" className="sm:w-1/3">
-                  <Button type="button" variant="outline" className="w-full h-12 sm:h-14 text-[15px] font-black uppercase tracking-widest rounded-2xl border-slate-200 text-slate-500 hover:bg-slate-50 transition-all shadow-none">
-                    Cancel
-                  </Button>
-                </Link>
+              {/* AI Assistant Highlight Card */}
+              <motion.div 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mt-8 p-5 bg-gradient-to-r from-emerald-50/80 to-teal-50/80 border border-emerald-100 rounded-3xl flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm"
+              >
+                <div className="flex items-center gap-4 text-center sm:text-left">
+                  <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-emerald-600 shadow-sm border border-emerald-100">
+                    <Phone size={24} />
+                  </div>
+                  <div>
+                    <h4 className="text-[15px] font-black text-slate-900 leading-tight">Smart AI Booking</h4>
+                    <p className="text-[13px] text-slate-500 font-bold mt-0.5">Let our medical assistant call you to handle everything.</p>
+                  </div>
+                </div>
                 <CallToBookButton
                   hospitalId={selectedHospital}
                   departmentId={selectedDepartment}
                   doctorId={selectedDoctor}
                   userMobile={userMobile || formData.mobile}
-                  className="sm:w-auto"
+                  className="w-full sm:w-auto"
                 />
+              </motion.div>
+
+              {/* Action Buttons */}
+              <div className="flex flex-col sm:flex-row gap-3 pt-6">
+                <Link href="/" className="sm:w-1/3">
+                  <Button type="button" variant="outline" className="w-full h-12 sm:h-14 text-[13px] font-black uppercase tracking-widest rounded-2xl border-slate-200 text-slate-500 hover:bg-slate-50 transition-all shadow-none">
+                    Cancel
+                  </Button>
+                </Link>
                 <Button 
                   type="submit" 
                   disabled={loading}
-                  className="flex-1 h-12 sm:h-14 text-[15px] font-black uppercase tracking-widest rounded-2xl bg-primary text-white shadow-xl shadow-brand/20 hover:shadow-brand/40 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300"
+                  className="flex-1 h-12 sm:h-14 text-[13px] font-black uppercase tracking-widest rounded-2xl bg-slate-900 text-white shadow-xl shadow-slate-900/10 hover:bg-slate-800 hover:scale-[1.01] active:scale-[0.99] transition-all duration-300"
                 >
                   {loading ? (
-                <div className="flex items-center gap-2"><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Processing...</div>
+                    <div className="flex items-center gap-2 font-black uppercase tracking-widest text-[11px]"><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Processing...</div>
                   ) : (
                     <div className="flex items-center gap-2"><Calendar className="h-4 w-4" /> Book Appointment</div>
                   )}

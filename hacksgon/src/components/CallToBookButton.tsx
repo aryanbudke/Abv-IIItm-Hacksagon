@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Phone, PhoneCall, PhoneOff, Loader2, X, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -8,11 +8,17 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 
+// A call in "pending" or "calling" state older than this is treated as stale/dead
+const CALL_TIMEOUT_MS = 10 * 60 * 1000; // 10 minutes
+const POLL_INTERVAL_MS = 5_000;
+// Stop polling after this many attempts even if still "calling"
+const MAX_POLL_ATTEMPTS = 120; // 10 min
+
 interface CallToBookButtonProps {
   hospitalId?: string;
   departmentId?: string;
   doctorId?: string;
-  userMobile?: string;   // pre-filled from profile
+  userMobile?: string;
   className?: string;
 }
 
@@ -21,6 +27,10 @@ interface CallRequest {
   status: "pending" | "calling" | "completed" | "failed" | "cancelled";
   created_at: string;
   appointment_id?: string;
+}
+
+function isStale(req: CallRequest): boolean {
+  return Date.now() - new Date(req.created_at).getTime() > CALL_TIMEOUT_MS;
 }
 
 export function CallToBookButton({
@@ -33,12 +43,22 @@ export function CallToBookButton({
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [activeCall, setActiveCall] = useState<CallRequest | null>(null);
-  const [pollingTimer, setPollingTimer] = useState<ReturnType<typeof setInterval> | null>(null);
+  // Use a ref for the timer so cleanup always sees the latest value
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pollCountRef = useRef(0);
 
-  // On mount, fetch any existing active call requests
+  const stopPolling = () => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    pollCountRef.current = 0;
+  };
+
+  // On mount, fetch existing active call requests (ignore stale ones)
   useEffect(() => {
     fetchActiveCall();
-    return () => { if (pollingTimer) clearInterval(pollingTimer); };
+    return () => stopPolling(); // always cleans up on unmount
   }, []);
 
   const fetchActiveCall = async () => {
@@ -47,33 +67,55 @@ export function CallToBookButton({
       if (!res.ok) return;
       const { requests } = await res.json();
       const active = (requests || []).find(
-        (r: CallRequest) => r.status === "pending" || r.status === "calling"
+        (r: CallRequest) =>
+          (r.status === "pending" || r.status === "calling") && !isStale(r)
       );
       setActiveCall(active || null);
+      // If we found an active call, start polling for it
+      if (active) startPolling(active.id);
     } catch {}
   };
 
   const startPolling = (callRequestId: string) => {
-    const timer = setInterval(async () => {
+    stopPolling(); // clear any existing timer first
+    pollCountRef.current = 0;
+
+    timerRef.current = setInterval(async () => {
+      pollCountRef.current += 1;
+
+      // Give up after MAX_POLL_ATTEMPTS
+      if (pollCountRef.current > MAX_POLL_ATTEMPTS) {
+        stopPolling();
+        setActiveCall(null);
+        toast.error("Call timed out. Please try again or book online.");
+        return;
+      }
+
       try {
         const res = await fetch("/api/patient-call/request");
         const { requests } = await res.json();
         const req = (requests || []).find((r: CallRequest) => r.id === callRequestId);
-        if (req) {
-          setActiveCall(req);
-          if (req.status === "completed") {
-            clearInterval(timer);
-            toast.success("Appointment booked via call! Check your dashboard.");
-          } else if (req.status === "failed") {
-            clearInterval(timer);
-            toast.error("Call ended without booking. Try again or book online.");
-          } else if (req.status === "cancelled") {
-            clearInterval(timer);
-          }
+
+        if (!req || isStale(req)) {
+          stopPolling();
+          setActiveCall(null);
+          return;
+        }
+
+        setActiveCall(req);
+
+        if (req.status === "completed") {
+          stopPolling();
+          toast.success("Appointment booked! Check your email and dashboard.");
+        } else if (req.status === "failed") {
+          stopPolling();
+          toast.error("Call ended without booking. Please try again.");
+        } else if (req.status === "cancelled") {
+          stopPolling();
+          setActiveCall(null);
         }
       } catch {}
-    }, 5000); // poll every 5s
-    setPollingTimer(timer);
+    }, POLL_INTERVAL_MS);
   };
 
   const initiateCall = async () => {
@@ -106,8 +148,8 @@ export function CallToBookButton({
   const cancelCall = async () => {
     if (!activeCall) return;
     await fetch(`/api/patient-call/request?id=${activeCall.id}`, { method: "DELETE" });
+    stopPolling();
     setActiveCall(null);
-    if (pollingTimer) clearInterval(pollingTimer);
     toast.info("Call request cancelled.");
   };
 

@@ -209,6 +209,27 @@ async function handleCallPatient(node: WorkflowNode, ctx: WorkflowContext) {
   if (!phone) return { step: mkStep(node, 'error', 'No patient phone number', ts) };
 
   const { params } = node.data;
+
+  // Fetch hospitals for DTMF keypad selection (up to 9 for single-digit presses)
+  const supabase = createServerClient();
+  const { data: hospitals } = await supabase
+    .from('hospitals')
+    .select('id, name')
+    .limit(9);
+
+  const hospitalList = (hospitals || []).map((h: { id: string; name: string }, i: number) => ({
+    dtmf: String(i + 1),
+    id: h.id,
+    name: h.name,
+  }));
+
+  const hospitalOptions = hospitalList.length > 1
+    ? hospitalList.map(h => `press ${h.dtmf} for ${h.name}`).join(', ')
+    : '';
+
+  const hospitalMap: Record<string, string> = {};
+  hospitalList.forEach(h => { hospitalMap[h.dtmf] = h.id; });
+
   try {
     console.log('[WorkflowEngine] Initiating patient call:', {
       execution_id: ctx.execution_id,
@@ -216,17 +237,19 @@ async function handleCallPatient(node: WorkflowNode, ctx: WorkflowContext) {
       patient_id: ctx.patient.id,
       patient_name: ctx.patient.name,
       to_phone: phone,
+      hospital_count: hospitalList.length,
     });
     const result = await initiateOutboundCall({
       patientPhone: phone,
       patientName: ctx.patient.name as string || 'Patient',
       doctorName: ctx.doctor_name || 'your doctor',
       labResultSummary: params.lab_result_summary,
-      facilityName: params.facility_name,
+      facilityName: hospitalList.length === 1 ? hospitalList[0].name : (params.facility_name || ''),
       facilityAddress: params.facility_address,
       facilityPhoneNumber: params.facility_phone_number,
-      callReason: params.call_reason,
+      callReason: params.call_reason || '',
       availableSlots: params.available_slots,
+      hospitalOptions,
       extraContext: { execution_id: ctx.execution_id, workflow_id: ctx.workflow_id },
     });
     ctx.conversation_id = result.conversation_id;
@@ -235,7 +258,13 @@ async function handleCallPatient(node: WorkflowNode, ctx: WorkflowContext) {
       conversation_id: result.conversation_id,
       call_sid: result.callSid || null,
     });
-    return { step: mkStep(node, 'ok', `Call initiated — conversation_id: ${result.conversation_id}`, ts, { conversation_id: result.conversation_id }) };
+    return {
+      step: mkStep(node, 'ok', `Call initiated — conversation_id: ${result.conversation_id}`, ts, {
+        conversation_id: result.conversation_id,
+        // Store hospital_map so the poller/webhook can resolve DTMF → hospital ID
+        hospital_map: Object.keys(hospitalMap).length > 0 ? JSON.stringify(hospitalMap) : null,
+      }),
+    };
   } catch (err) {
     console.error('[WorkflowEngine] Call initiation failed:', err);
     return { step: mkStep(node, 'error', `Call failed: ${err}`, ts) };

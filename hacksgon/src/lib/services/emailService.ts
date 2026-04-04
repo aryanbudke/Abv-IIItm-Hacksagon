@@ -215,75 +215,54 @@ Queue Management System
       date: string;
       timeSlot: string;
       appointmentId: string;
+      appointmentReason?: string;
     }
   ): Promise<boolean> {
-    const subject = 'Appointment Confirmed - Queue Management System';
-    
+    const subject = 'Appointment Confirmed - MediQueue';
+
+    const reasonRow = appointmentDetails.appointmentReason
+      ? `<div class="detail-row">
+           <span class="detail-label">Reason for Visit:</span>
+           <span>${appointmentDetails.appointmentReason}</span>
+         </div>`
+      : '';
+
     const html = `
       <!DOCTYPE html>
       <html>
         <head>
           <style>
-            body {
-              font-family: Arial, sans-serif;
-              line-height: 1.6;
-              color: #333;
-            }
-            .container {
-              max-width: 600px;
-              margin: 0 auto;
-              padding: 20px;
-              background-color: #f9f9f9;
-            }
-            .header {
-              background-color: #10b981;
-              color: white;
-              padding: 20px;
-              text-align: center;
-              border-radius: 5px 5px 0 0;
-            }
-            .content {
-              background-color: white;
-              padding: 30px;
-              border-radius: 0 0 5px 5px;
-            }
-            .appointment-details {
-              background-color: #f0fdf4;
-              border-left: 4px solid #10b981;
-              padding: 15px;
-              margin: 20px 0;
-            }
-            .detail-row {
-              display: flex;
-              margin: 10px 0;
-            }
-            .detail-label {
-              font-weight: bold;
-              min-width: 150px;
-            }
-            .success-icon {
-              font-size: 48px;
-              text-align: center;
-              margin: 20px 0;
-            }
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9; }
+            .header { background-color: #10b981; color: white; padding: 24px 20px; text-align: center; border-radius: 8px 8px 0 0; }
+            .header h1 { margin: 0; font-size: 22px; }
+            .content { background-color: white; padding: 30px; border-radius: 0 0 8px 8px; }
+            .success-icon { font-size: 48px; text-align: center; margin: 10px 0 20px; }
+            .appointment-details { background-color: #f0fdf4; border-left: 4px solid #10b981; border-radius: 4px; padding: 16px 20px; margin: 20px 0; }
+            .detail-row { display: flex; margin: 10px 0; }
+            .detail-label { font-weight: bold; min-width: 160px; color: #065f46; }
+            .tips { background-color: #fffbeb; border: 1px solid #fcd34d; border-radius: 6px; padding: 14px 18px; margin: 20px 0; }
+            .tips ul { margin: 8px 0 0; padding-left: 20px; }
+            .footer { text-align: center; margin-top: 24px; font-size: 12px; color: #9ca3af; }
           </style>
         </head>
         <body>
           <div class="container">
             <div class="header">
-              <h1>✅ Appointment Confirmed</h1>
+              <h1>Appointment Confirmed</h1>
             </div>
             <div class="content">
-              <div class="success-icon">🎉</div>
-              <h2>Your appointment has been successfully booked!</h2>
+              <div class="success-icon">✅</div>
+              <h2 style="margin-top:0">Your appointment has been booked!</h2>
               <p>Dear ${appointmentDetails.patientName},</p>
-              <p>Your appointment has been confirmed. Please find the details below:</p>
-              
+              <p>Your appointment was confirmed via our AI assistant. Here are the full details:</p>
+
               <div class="appointment-details">
                 <div class="detail-row">
                   <span class="detail-label">Appointment ID:</span>
-                  <span>${appointmentDetails.appointmentId}</span>
+                  <span style="font-family:monospace">${appointmentDetails.appointmentId}</span>
                 </div>
+                ${reasonRow}
                 <div class="detail-row">
                   <span class="detail-label">Doctor:</span>
                   <span>Dr. ${appointmentDetails.doctorName}</span>
@@ -305,26 +284,29 @@ Queue Management System
                   <span>${appointmentDetails.timeSlot}</span>
                 </div>
               </div>
-              
-              <p><strong>Important:</strong></p>
-              <ul>
-                <li>Please arrive 15 minutes before your scheduled time</li>
-                <li>Bring your appointment ID for reference</li>
-                <li>Carry any relevant medical documents</li>
-              </ul>
-              
-              <p>If you need to reschedule or cancel, please contact us at least 24 hours in advance.</p>
+
+              <div class="tips">
+                <strong>Before you come:</strong>
+                <ul>
+                  <li>Arrive 15 minutes before your scheduled time</li>
+                  <li>Keep your Appointment ID handy: <strong>${appointmentDetails.appointmentId}</strong></li>
+                  <li>Carry any relevant medical documents or prescriptions</li>
+                </ul>
+              </div>
+
+              <p>Need to reschedule or cancel? Please let us know at least 24 hours in advance through the app.</p>
+              <p>See you soon!</p>
+            </div>
+            <div class="footer">
+              <p>This is an automated confirmation. Please do not reply to this email.</p>
+              <p>&copy; 2026 MediQueue. All rights reserved.</p>
             </div>
           </div>
         </body>
       </html>
     `;
 
-    return this.sendEmail({
-      to: email,
-      subject,
-      html,
-    });
+    return this.sendEmail({ to: email, subject, html });
   }
 }
 
