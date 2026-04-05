@@ -39,3 +39,11 @@ yarn-error.log*
 .agent
 refrence
 refernce
+
+docs/MASTER_PLAN.md
+docs/PROJECT_STATUS.md
+docs/SETUP_COMPLETE.md
+docs/SETUP_GUIDE.md
+
+database
+docs/SUPABASE_SETUP.md

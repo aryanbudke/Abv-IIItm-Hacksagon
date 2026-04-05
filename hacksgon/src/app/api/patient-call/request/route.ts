@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase/server';
 import { auth } from '@clerk/nextjs/server';
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://hackarena.aryanbudke.in';
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://hacksagon.aryanbudke.in';
 
 function normalizePhone(raw: string): string {
   const compact = raw.replace(/\s+/g, '').replace(/-/g, '');

@@ -153,7 +153,7 @@ The post-call webhook fires when a call ends and sends the transcript + DCR fiel
 4. Click **+ Add webhook** or **Create webhook**
 5. Set the URL to:
    ```
-   https://hackarena.aryanbudke.in/api/patient-call/webhook
+   https://hacksagon.aryanbudke.in/api/patient-call/webhook
    ```
 6. Select event type: **Post-call** (or "Conversation ended")
 7. Save
@@ -214,7 +214,7 @@ ELEVENLABS_PHONE_NUMBER_ID=phnum_your_phone_number_id_here
 
 ## Step 16 — Test the Call
 
-1. Go to `https://hackarena.aryanbudke.in`
+1. Go to `https://hacksagon.aryanbudke.in`
 2. Navigate to **Book Appointment**
 3. Click **Book via Call**
 4. Answer the call — the agent will greet you by name
