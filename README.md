@@ -86,15 +86,6 @@ graph TD
 
 ---
 
-## Documentation Deep-Dives
-
-- [**Architecture & Design**](docs/ARCHITECTURE.md): Technical details on the Workflow Engine and predictive logic.
-- [**Setup & Installation Guide**](docs/SETUP_COMPLETE.md): How to configure Supabase, Clerk, and ElevenLabs.
-- [**Database & Security**](docs/DATABASE_GUIDE.md): Schema definitions, RLS policies, and data flow.
-- [**API Reference**](docs/API_REFERENCE.md): List of core endpoints and integration hooks.
-
----
-
 ## Getting Started
 
 1. **Clone & Install**:
